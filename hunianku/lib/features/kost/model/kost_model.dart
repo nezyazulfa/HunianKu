@@ -1,7 +1,9 @@
 import 'package:mongo_dart/mongo_dart.dart';
 import 'package:hive/hive.dart';
 
-@HiveType(typeId: 0)
+part 'kost_model.g.dart';
+
+@HiveType(typeId: 1)
 class KostModel {
   @HiveField(0)
   String? id;
@@ -25,7 +27,6 @@ class KostModel {
   final String deskripsi;
   @HiveField(10)
   final String status;
-  @HiveField(11)
   KostModel({
     this.id,
     required this.idkost,
@@ -42,7 +43,7 @@ class KostModel {
 
   factory KostModel.fromMap(Map<String, dynamic> map) {
     return KostModel(
-      id: (map['id'] as ObjectId?)?.oid,
+      id: (map['_id'] as ObjectId?)?.oid,
       idkost: map['idkost'],
       namakost: map['namakost'],
       jenis: map['jenis'],

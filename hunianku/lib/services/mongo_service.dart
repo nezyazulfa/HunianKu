@@ -5,7 +5,7 @@ import 'package:hunianku/helpers/log_helper.dart';
 class MongoService {
   static final MongoService _instance = MongoService._internal();
   Db? _db;
-  DbCollection? _collection;
+  //DbCollection? _collection;
   final String _source = "mongo_service.dart";
 
   factory MongoService() {
@@ -13,20 +13,7 @@ class MongoService {
   }
   MongoService._internal();
 
-  // Fungsi Internal untuk memastikan koleksi siap digunakan 
-  Future<DbCollection> _getSafeCollection() async {
-    if (_db == null || !_db!.isConnected || _collection == null) {
-      await LogHelper.writeLog(
-        "INFO: Koleksi belum siap, mencoba rekoneksi...",
-        source: _source,
-        level: 3,
-      );
-      await connect();
-    }
-    return _collection!;
-  }
-
-  //inisiasi koneksi ke mongodb atlas
+    //inisiasi koneksi ke mongodb atlas
   Future<void> connect() async {
     await LogHelper.writeLog(
       "Mencoba koneksi MongoDB Atlas",
@@ -52,10 +39,7 @@ class MongoService {
       throw Exception(
         "Koneksi Timeout. Cek IP Whitelist (0.0.0.0/0) atau Sinyal HP.",
       );
-    }
-
-    _collection = _db!.collection('user');
-
+    }    //_collection = _db!.collection('user');
       await LogHelper.writeLog(
         "DATABASE: Terhubung & Koleksi Siap",
         source: _source,
@@ -69,13 +53,22 @@ class MongoService {
       );
       rethrow;
     }
-
   }
 
+  // Mendapatkan koleksi berdasarkan nama
+  Future<DbCollection> getCollection(String collectionName) async {
+    if (_db == null || !_db!.isConnected) {
+      await connect();
+    }
+    return _db!.collection(collectionName);
+  }
+
+  // Mendapatkan nama database saat ini
   String? getDatabaseName() {
   return _db?.databaseName;
   }
 
+  // menutup koneksi ke database
   Future<void> close() async {
     if (_db != null && _db!.isConnected) {
       await _db!.close();
@@ -84,6 +77,53 @@ class MongoService {
         source: _source,
         level: 2,
       );
+    }
+  }
+
+  // CREATE
+  Future<void> insertDocument(String collectionName, Map<String, dynamic> data) async {
+    try {
+      final collection = await getCollection(collectionName);
+      await collection.insertOne(data);
+      await LogHelper.writeLog("SUCCESS: Insert ke '$collectionName'", source: _source, level: 2);
+    } catch (e) {
+      await LogHelper.writeLog("ERROR: Insert Failed - $e", source: _source, level: 1);
+      rethrow;
+    }
+  }
+
+  // READ (Ambil semua data)
+  Future<List<Map<String, dynamic>>> getAllDocuments(String collectionName) async {
+    try {
+      final collection = await getCollection(collectionName);
+      return await collection.find().toList();
+    } catch (e) {
+      await LogHelper.writeLog("ERROR: Fetch Failed - $e", source: _source, level: 1);
+      return [];
+    }
+  }
+
+  // UPDATE
+  Future<void> updateDocument(String collectionName, ObjectId id, Map<String, dynamic> updateData) async {
+    try {
+      final collection = await getCollection(collectionName);
+      await collection.updateOne(where.id(id), {'\$set': updateData});
+      await LogHelper.writeLog("SUCCESS: Update ID $id di '$collectionName'", source: _source, level: 2);
+    } catch (e) {
+      await LogHelper.writeLog("ERROR: Update Failed - $e", source: _source, level: 1);
+      rethrow;
+    }
+  }
+
+  // DELETE
+  Future<void> deleteDocument(String collectionName, ObjectId id) async {
+    try {
+      final collection = await getCollection(collectionName);
+      await collection.remove(where.id(id));
+      await LogHelper.writeLog("SUCCESS: Hapus ID $id di '$collectionName'", source: _source, level: 2);
+    } catch (e) {
+      await LogHelper.writeLog("ERROR: Delete Failed - $e", source: _source, level: 1);
+      rethrow;
     }
   }
 }

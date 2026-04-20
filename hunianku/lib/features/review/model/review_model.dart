@@ -3,6 +3,7 @@ import 'package:hive/hive.dart';
 import 'package:hunianku/features/user/model/user_model.dart';
 import 'package:hunianku/features/kost/model/kost_model.dart';
 
+part 'review_model.g.dart';
 
 @HiveType(typeId: 4)
 class ReviewModel {
@@ -20,7 +21,6 @@ class ReviewModel {
   final String komentar;
   @HiveField(6)
   final String tanggal;
-  @HiveField(7)
   ReviewModel({
     this.id,
     required this.idreview,
@@ -33,7 +33,7 @@ class ReviewModel {
 
   factory ReviewModel.fromMap(Map<String, dynamic> map) {
     return ReviewModel(
-      id: (map['id'] as ObjectId?)?.oid,
+      id: (map['_id'] as ObjectId?)?.oid,
       idreview: map['idreview'],
       user: map['user'] != null ? UserModel.fromMap(map['user']) : null,
       kost: map['kost'] != null ? KostModel.fromMap(map['kost']) : null,

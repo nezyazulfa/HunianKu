@@ -3,8 +3,9 @@ import 'package:hive/hive.dart';
 import 'package:hunianku/features/user/model/user_model.dart';
 import 'package:hunianku/features/kost/model/kost_model.dart';
 
+part 'bookmark_model.g.dart';
 
-@HiveType(typeId: 4)
+@HiveType(typeId: 2)
 class BookmarkModel {
   @HiveField(0)
   String? id;
@@ -26,7 +27,7 @@ class BookmarkModel {
 
   factory BookmarkModel.fromMap(Map<String, dynamic> map) {
     return BookmarkModel(
-      id: (map['id'] as ObjectId?)?.oid,
+      id: (map['_id'] as ObjectId?)?.oid,
       idbookmark: map['idbookmark'],
       user: map['user'] != null ? UserModel.fromMap(map['user']) : null,
       kost: map['kost'] != null ? KostModel.fromMap(map['kost']) : null,

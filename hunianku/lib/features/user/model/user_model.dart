@@ -1,6 +1,8 @@
 import 'package:mongo_dart/mongo_dart.dart';
 import 'package:hive/hive.dart';
 
+part 'user_model.g.dart';
+
 @HiveType(typeId: 0)
 class UserModel {
   @HiveField(0)
@@ -15,7 +17,6 @@ class UserModel {
   final String nama;
   @HiveField(5)
   final String role;
-  @HiveField(6)
   UserModel({
     this.id,
     required this.iduser,
@@ -27,7 +28,7 @@ class UserModel {
 
   factory UserModel.fromMap(Map<String, dynamic> map) {
     return UserModel(
-      id: (map['id'] as ObjectId?)?.oid,
+      id: (map['_id'] as ObjectId?)?.oid,
       iduser: map['iduser'],
       password: map['password'],
       email: map['email'],
