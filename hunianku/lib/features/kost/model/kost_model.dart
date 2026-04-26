@@ -1,4 +1,3 @@
-import 'package:mongo_dart/mongo_dart.dart';
 import 'package:hive/hive.dart';
 
 part 'kost_model.g.dart';
@@ -6,7 +5,7 @@ part 'kost_model.g.dart';
 @HiveType(typeId: 1)
 class KostModel {
   @HiveField(0)
-  String? id;
+  final String? id;
   @HiveField(1)
   final String idkost;
   @HiveField(2)
@@ -43,23 +42,23 @@ class KostModel {
 
   factory KostModel.fromMap(Map<String, dynamic> map) {
     return KostModel(
-      id: (map['_id'] as ObjectId?)?.oid,
-      idkost: map['idkost'],
-      namakost: map['namakost'],
-      jenis: map['jenis'],
-      alamat: map['alamat'],
-      lokasi: map['lokasi'],
-      harga: map['harga'],
-      kontak: map['kontak'],
-      daftarfasilitas: map['daftarfasilitas'],
-      deskripsi: map['deskripsi'],
-      status: map['status'],
+      id: map['_id'] ?? map['id'],
+      idkost: map['idkost'] ?? '',
+      namakost: map['namakost'] ?? '',
+      jenis: map['jenis'] ?? '',
+      alamat: map['alamat'] ?? '',
+      lokasi: map['lokasi'] ?? '',
+      harga: map['harga'] ?? '',
+      kontak: map['kontak'] ?? '',
+      daftarfasilitas: map['daftarfasilitas'] ?? '',
+      deskripsi: map['deskripsi'] ?? '',
+      status: map['status'] ?? '',
     );
   }
 
   Map<String, dynamic> toMap() {
     return {
-      '_id': id != null ? ObjectId.fromHexString(id!) : ObjectId(),
+      'id': id,
       'idkost': idkost,
       'namakost': namakost,
       'jenis': jenis,

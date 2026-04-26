@@ -1,4 +1,3 @@
-import 'package:mongo_dart/mongo_dart.dart';
 import 'package:hive/hive.dart';
 import 'package:hunianku/features/user/model/user_model.dart';
 import 'package:hunianku/features/kost/model/kost_model.dart';
@@ -8,7 +7,7 @@ part 'note_model.g.dart';
 @HiveType(typeId: 3)
 class NoteModel {
   @HiveField(0)
-  String? id;
+  final String? id;
   @HiveField(1)
   final String idnote;
   @HiveField(2)
@@ -27,17 +26,17 @@ class NoteModel {
 
   factory NoteModel.fromMap(Map<String, dynamic> map) {
     return NoteModel(
-      id: (map['_id'] as ObjectId?)?.oid,
-      idnote: map['idnote'],
+      id: map['_id'] ?? map['id'],
+      idnote: map['idnote'] ?? '',
       user: map['user'] != null ? UserModel.fromMap(map['user']) : null,
       kost: map['kost'] != null ? KostModel.fromMap(map['kost']) : null,
-      catatan: map['catatan'],
+      catatan: map['catatan'] ?? '',
     );
   }
 
   Map<String, dynamic> toMap() {
     return {
-      '_id': id != null ? ObjectId.fromHexString(id!) : ObjectId(),
+      'id': id,
       'idnote': idnote,
       'user': user?.toMap(),
       'kost': kost?.toMap(),
