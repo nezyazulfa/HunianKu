@@ -1,4 +1,5 @@
 import 'package:hive/hive.dart';
+import 'package:mongo_dart/mongo_dart.dart';
 import 'package:hunianku/features/user/model/user_model.dart';
 import 'package:hunianku/features/kost/model/kost_model.dart';
 
@@ -26,7 +27,7 @@ class NoteModel {
 
   factory NoteModel.fromMap(Map<String, dynamic> map) {
     return NoteModel(
-      id: map['_id'] ?? map['id'],
+      id: (map['_id'] as ObjectId).oid,
       idnote: map['idnote'] ?? '',
       user: map['user'] != null ? UserModel.fromMap(map['user']) : null,
       kost: map['kost'] != null ? KostModel.fromMap(map['kost']) : null,
@@ -36,7 +37,7 @@ class NoteModel {
 
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
+      '_id' : id != null ? ObjectId.fromHexString(id!) : ObjectId(),
       'idnote': idnote,
       'user': user?.toMap(),
       'kost': kost?.toMap(),
