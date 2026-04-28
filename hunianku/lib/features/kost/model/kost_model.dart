@@ -1,4 +1,5 @@
 import 'package:hive/hive.dart';
+import 'package:mongo_dart/mongo_dart.dart';
 
 part 'kost_model.g.dart';
 
@@ -42,7 +43,7 @@ class KostModel {
 
   factory KostModel.fromMap(Map<String, dynamic> map) {
     return KostModel(
-      id: map['_id'] ?? map['id'],
+      id: (map['_id'] as ObjectId).oid,
       idkost: map['idkost'] ?? '',
       namakost: map['namakost'] ?? '',
       jenis: map['jenis'] ?? '',
@@ -58,7 +59,7 @@ class KostModel {
 
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
+      '_id' : id != null ? ObjectId.fromHexString(id!) : ObjectId(),
       'idkost': idkost,
       'namakost': namakost,
       'jenis': jenis,
