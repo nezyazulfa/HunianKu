@@ -1,6 +1,6 @@
 import 'package:hive/hive.dart';
 import 'package:hunianku/features/user/model/user_model.dart';
-import 'package:hunianku/features/kost/model/kost_model.dart';
+import 'package:hunianku/features/dashboard/model/kost_model.dart';
 import 'package:mongo_dart/mongo_dart.dart';
 
 part 'bookmark_model.g.dart';
