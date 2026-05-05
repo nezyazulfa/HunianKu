@@ -3,6 +3,7 @@ import 'package:hunianku/services/session_service.dart';
 import 'package:hunianku/features/dashboard/views/detail_kost_page.dart'; 
 import 'package:hunianku/features/dashboard/controllers/dashboard_controller.dart';
 import 'package:hunianku/features/dashboard/model/kost_model.dart';
+import 'package:hunianku/features/tambah_kost/views/tambah_kost_page.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -50,108 +51,26 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   Widget build(BuildContext context) {
+    // List halaman yang akan ditampilkan sesuai index navbar
+    final List<Widget> pages = [
+      _buildMainDashboard(), // Index 0: Tampilan list kost yang utama
+      const Center(child: Text("Halaman Dokumen/Key")), // Index 1
+      const AddKostPage(),   // Index 2: Halaman Tambah Kost
+      const Center(child: Text("Halaman Edit/Pin")),   // Index 3
+      const Center(child: Text("Halaman Profil")),     // Index 4
+    ];
+
     return Scaffold(
       backgroundColor: backgroundColor,
+      // Mencegah Navbar terdorong ke atas oleh keyboard saat mengetik
+      resizeToAvoidBottomInset: false,
       body: SafeArea(
         child: Stack(
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: 24),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 24.0),
-                  child: Text(
-                    'Cari kost impianmu di sini!',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.black87,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-                const SizedBox(height: 20),
+            // Konten berubah sesuai index yang dipilih
+            pages[_selectedIndex],
 
-                // SEARCH BAR & LOGO (Tetap Sama)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                  child: Row(
-                    children: [
-                      Image.asset(
-                        'assets/logo_hunianku.png',
-                        height: 36,
-                        width: 36,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Container(
-                          height: 50,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(25),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: const TextField(
-                            decoration: InputDecoration(
-                              hintText: 'Cari Kost',
-                              hintStyle: TextStyle(color: Colors.grey, fontSize: 14),
-                              prefixIcon: Icon(Icons.search, color: Colors.black87),
-                              suffixIcon: Icon(Icons.menu, color: Colors.black87),
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.symmetric(vertical: 15),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // LIST KOST (Dihubungkan dengan ValueListenableBuilder)
-                Expanded(
-                  child: ValueListenableBuilder<bool>(
-                    valueListenable: _controller.isLoading,
-                    builder: (context, isLoading, child) {
-                      if (isLoading) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-
-                      return ValueListenableBuilder<List<KostModel>>(
-                        valueListenable: _controller.kostList,
-                        builder: (context, kostList, child) {
-                          if (kostList.isEmpty) {
-                            return const Center(child: Text("Belum ada data kost tersedia."));
-                          }
-
-                          return ListView.builder(
-                            padding: const EdgeInsets.only(
-                              left: 24.0, 
-                              right: 24.0, 
-                              bottom: 100.0, 
-                            ),
-                            itemCount: kostList.length,
-                            itemBuilder: (context, index) {
-                              final kost = kostList[index];
-                              return _buildKostCard(kost); // Kirim KostModel ke widget
-                            },
-                          );
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-
-            // BOTTOM NAVIGATION BAR (Tetap Sama)
+            // Navbar tetap berada di paling atas (Stack layer teratas)
             Positioned(
               left: 0,
               right: 0,
@@ -176,7 +95,6 @@ class _DashboardPageState extends State<DashboardPage> {
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: _userRole == 'pemilik' 
                   ? [
-                      // --- NAVBAR PEMILIK KOST ---
                       _buildNavItem(Icons.home, Icons.home_outlined, 0),
                       _buildNavItem(Icons.vpn_key, Icons.vpn_key_outlined, 1),
                       _buildNavItem(Icons.add_circle, Icons.add, 2),
@@ -184,10 +102,9 @@ class _DashboardPageState extends State<DashboardPage> {
                       _buildNavItem(Icons.person, Icons.person_outline, 4),
                     ]
                   : [
-                      // --- NAVBAR PENGHUNI KOST ---
                       _buildNavItem(Icons.home, Icons.home_outlined, 0),
                       _buildNavItem(Icons.article, Icons.article_outlined, 1),
-                      _buildNavItem(Icons.add_circle, Icons.add, 2), // Saat tidak aktif berupa +, saat aktif bulat penuh
+                      _buildNavItem(Icons.add_circle, Icons.add, 2),
                       _buildNavItem(Icons.push_pin, Icons.push_pin_outlined, 3), 
                       _buildNavItem(Icons.person, Icons.person_outline, 4),
                     ],
@@ -197,6 +114,105 @@ class _DashboardPageState extends State<DashboardPage> {
           ],
         ),
       ),
+    );
+  }
+
+  // FUNGSI UNTUK MENAMPILKAN DASHBOARD UTAMA (SEARCH & LIST KOST)
+  Widget _buildMainDashboard() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: 24),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 24.0),
+          child: Text(
+            'Cari kost impianmu di sini!',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              color: Colors.black87,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        // SEARCH BAR & LOGO 
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: Row(
+            children: [
+              Image.asset(
+                'assets/logo_hunianku.png',
+                height: 36,
+                width: 36,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Container(
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(25),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: const TextField(
+                    decoration: InputDecoration(
+                      hintText: 'Cari Kost',
+                      hintStyle: TextStyle(color: Colors.grey, fontSize: 14),
+                      prefixIcon: Icon(Icons.search, color: Colors.black87),
+                      suffixIcon: Icon(Icons.menu, color: Colors.black87),
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(vertical: 15),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        // LIST KOST
+        Expanded(
+          child: ValueListenableBuilder<bool>(
+            valueListenable: _controller.isLoading,
+            builder: (context, isLoading, child) {
+              if (isLoading) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              return ValueListenableBuilder<List<KostModel>>(
+                valueListenable: _controller.kostList,
+                builder: (context, kostList, child) {
+                  if (kostList.isEmpty) {
+                    return const Center(child: Text("Belum ada data kost tersedia."));
+                  }
+
+                  return ListView.builder(
+                    padding: const EdgeInsets.only(
+                      left: 24.0, 
+                      right: 24.0, 
+                      bottom: 100.0, 
+                    ),
+                    itemCount: kostList.length,
+                    itemBuilder: (context, index) {
+                      final kost = kostList[index];
+                      return _buildKostCard(kost); 
+                    },
+                  );
+                },
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
