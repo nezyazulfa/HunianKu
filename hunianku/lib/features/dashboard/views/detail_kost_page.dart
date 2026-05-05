@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:hunianku/features/dashboard/model/kost_model.dart';
 
 class DetailKostPage extends StatelessWidget {
-  // Menerima data kost yang diklik dari halaman sebelumnya
-  final Map<String, String> kostData;
-
-  const DetailKostPage({super.key, required this.kostData});
+  final KostModel kost;
+  const DetailKostPage({super.key, required this.kost});
 
   final Color backgroundColor = const Color(0xFFEFEBE1); // Warna krem background atas
   final Color cardColor = const Color(0x80FBFBF9); 
@@ -38,7 +37,7 @@ class DetailKostPage extends StatelessWidget {
                     ),
                     Expanded(
                       child: Text(
-                        kostData['nama'] ?? 'Detail Kost',
+                        kost.namakost,
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                           fontSize: 22,
@@ -85,42 +84,26 @@ class DetailKostPage extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 32),
-
+                      // jenis
+                       _buildDetailItem('Jenis Kost:', kost.jenis),
+                      const SizedBox(height: 16),
                       // Alamat
-                      _buildDetailItem(
-                        'Alamat:',
-                        kostData['alamat_lengkap'] ?? 
-                        'Jl. Ciwaruga RT 01 RW 01, Desa Ciwaruga, Kecamatan Parongpong, Kabupaten Bandung Barat. (https.googlemaps.KostBahagia)',
-                      ),
+                      _buildDetailItem('Alamat:', kost.alamat),
                       const SizedBox(height: 16),
-
                       // Fasilitas
-                      _buildDetailItem(
-                        'Fasilitas:',
-                        kostData['fasilitas'] ?? 
-                        'Khusus putri\nKamar mandi luar\nDapur bersama\nCCTV\nWifi\nMeja\nKasur\nLemari',
-                      ),
+                      _buildDetailItem('Lokasi:',kost.lokasi),
                       const SizedBox(height: 16),
-
                       // Harga
-                      _buildDetailItem(
-                        'Harga:',
-                        kostData['harga'] ?? 'Rp. 600.000/bulan',
-                      ),
+                      _buildDetailItem('Harga:','Rp. ${kost.harga}/bulan'),
                       const SizedBox(height: 16),
-
+                      // Fasilitas
+                      _buildDetailItem('Fasilitas:', kost.daftarfasilitas),
+                      const SizedBox(height: 16),
                       // Contact Person
-                      _buildDetailItem(
-                        'Contact Person:',
-                        kostData['kontak'] ?? '08123456789',
-                      ),
+                      _buildDetailItem('Contact Person:',kost.kontak ),
                       const SizedBox(height: 16),
-
                       // Deskripsi
-                      _buildDetailItem(
-                        'Deskripsi:',
-                        kostData['deskripsi'] ?? 'Gerbang dibuka 24 jam',
-                      ),
+                      _buildDetailItem('Deskripsi:',kost.deskripsi),
                       const SizedBox(height: 40), // Spasi bawah agar tidak mentok
                     ],
                   ),
