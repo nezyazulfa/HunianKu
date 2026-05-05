@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:hunianku/features/dashboard/model/kost_model.dart';
+import 'package:hunianku/features/tambah_kost/controllers/tambah_kost_controller.dart';
 
 class AddKostPage extends StatefulWidget {
   const AddKostPage({super.key});
@@ -8,6 +10,7 @@ class AddKostPage extends StatefulWidget {
 }
 
 class _AddKostPageState extends State<AddKostPage> {
+  final TambahKostController _controller = TambahKostController();
   // Controllers untuk text input
   final TextEditingController _namaController = TextEditingController();
   final TextEditingController _deskripsiController = TextEditingController();
@@ -27,6 +30,22 @@ class _AddKostPageState extends State<AddKostPage> {
   final Color primaryGreen = const Color(0xFF4A6525); // Hijau olive
   final Color primaryRed = const Color(0xFF6B1212); // Merah marun
   final Color inputBackgroundColor = Colors.white;
+
+  KostModel _buatObjekKost() {
+  return KostModel(
+    // Buat ID sementara yang unik menggunakan timestamp (waktu saat ini)
+    idkost: 'K-${DateTime.now().millisecondsSinceEpoch}', 
+    namakost: _namaController.text.trim(),
+    jenis: _selectedKategori,
+    alamat: _alamatController.text.trim(),
+    lokasi: _gmapsController.text.trim(),
+    harga: _hargaController.text.trim(),
+    kontak: _kontakController.text.trim(),
+    daftarfasilitas: _fasilitasController.text.trim(),
+    deskripsi: _deskripsiController.text.trim(),
+    status: _selectedStatus,
+  );
+}
 
   @override
   void dispose() {
@@ -139,13 +158,31 @@ class _AddKostPageState extends State<AddKostPage> {
                     const SizedBox(height: 32),
 
                     // --- TOMBOL AKSI (Draf & Simpan) ---
-                    Row(
+                    ValueListenableBuilder<bool>(
+                      valueListenable: _controller.isLoading,
+                      builder: (context, isLoading, child) {
+                        if (isLoading) {
+                          return Center(
+                            child: CircularProgressIndicator(color: primaryGreen),
+                          );
+                        }
+                    return Row(
                       children: [
                         // Tombol Draf (Outline)
                         Expanded(
                           child: OutlinedButton(
                             onPressed: () {
-                              // Logika simpan draf
+                              final kostDraft = _buatObjekKost();
+                              _controller.simpanKeDraf(context, kostDraft, () {
+                                // Fungsi ini akan dipanggil otomatis oleh controller saat sukses
+                                _namaController.clear();
+                                _deskripsiController.clear();
+                                _alamatController.clear();
+                                _gmapsController.clear();
+                                _fasilitasController.clear();
+                                _hargaController.clear();
+                                _kontakController.clear();
+                              });
                             },
                             style: OutlinedButton.styleFrom(
                               side: BorderSide(color: primaryGreen, width: 1.5),
@@ -170,8 +207,23 @@ class _AddKostPageState extends State<AddKostPage> {
                         Expanded(
                           child: ElevatedButton(
                             onPressed: () {
-                              // Logika simpan data ke database
-                              print('Menyimpan Kost: ${_namaController.text}');
+                              if (_namaController.text.isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Nama Kost wajib diisi!')),
+                                );
+                                return;
+                              }
+                              final kostBaru = _buatObjekKost();
+                              _controller.simpanKost(context, kostBaru, () {
+                                // Fungsi ini akan dipanggil otomatis oleh controller saat sukses
+                                _namaController.clear();
+                                _deskripsiController.clear();
+                                _alamatController.clear();
+                                _gmapsController.clear();
+                                _fasilitasController.clear();
+                                _hargaController.clear();
+                                _kontakController.clear();
+                              });
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: primaryGreen,
@@ -192,6 +244,8 @@ class _AddKostPageState extends State<AddKostPage> {
                           ),
                         ),
                       ],
+                    );
+                    },
                     ),
                   ],
                 ),

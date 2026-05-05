@@ -1,5 +1,5 @@
 import 'package:hunianku/services/mongo_service.dart';
-// Sesuaikan path import model ini dengan struktur foldermu
+import 'package:hive/hive.dart';
 import 'package:hunianku/features/dashboard/model/kost_model.dart'; 
 
 class KostService {
@@ -17,6 +17,36 @@ class KostService {
       return data.map((json) => KostModel.fromMap(json)).toList();
     } catch (e) {
       throw Exception('Gagal mengambil data kost: $e');
+    }
+  }
+
+  // 1. SIMPAN KE MONGODB (Online)
+  Future<void> simpanKostRemote(KostModel kostBaru) async {
+    try {
+      await _mongo.insertDocument(_collectionName, kostBaru.toMap());
+    } catch (e) {
+      throw Exception('Gagal menyimpan ke server: $e');
+    }
+  }
+
+  // 2. SIMPAN KE HIVE (Lokal / Draf)
+  Future<void> simpanKostLokal(KostModel kostBaru) async {
+    try {
+      var box = await Hive.openBox<KostModel>('draft_box');
+      await box.put(kostBaru.idkost, kostBaru);
+    } catch (e) {
+      throw Exception('Gagal menyimpan draf lokal: $e');
+    }
+  }
+
+  // 3. SIMPAN KE PENDING SYNC (Gagal karena tidak ada internet)
+  Future<void> simpanPendingLokal(KostModel kostBaru) async {
+    try {
+      // Gunakan kotak khusus "pending_box"
+      var box = await Hive.openBox<KostModel>('pending_box');
+      await box.put(kostBaru.idkost, kostBaru);
+    } catch (e) {
+      throw Exception('Gagal menyimpan antrean: $e');
     }
   }
 }
