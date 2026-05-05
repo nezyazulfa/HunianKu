@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:hunianku/services/session_service.dart'; // Pastikan path ini sesuai dengan project-mu
+import 'package:hunianku/services/session_service.dart'; 
+import 'package:hunianku/features/dashboard/views/detail_kost_page.dart'; 
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -315,7 +316,14 @@ class _DashboardPageState extends State<DashboardPage> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => DetailKostPage(kostData: data),
+                            ),
+                          );
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: buttonRed,
                           foregroundColor: Colors.white,
