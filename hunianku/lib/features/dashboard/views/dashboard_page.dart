@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hunianku/services/session_service.dart'; 
 import 'package:hunianku/features/dashboard/views/detail_kost_page.dart'; 
+import 'package:hunianku/features/dashboard/views/review_kost_page.dart';
 import 'package:hunianku/features/dashboard/controllers/dashboard_controller.dart';
 import 'package:hunianku/features/dashboard/model/kost_model.dart';
 import 'package:hunianku/features/tambah_kost/views/tambah_kost_page.dart';
@@ -300,7 +301,14 @@ class _DashboardPageState extends State<DashboardPage> {
                   children: [
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ReviewKostPage(kostData: data),
+                            ),
+                          );
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: buttonYellow,
                           foregroundColor: Colors.white,
