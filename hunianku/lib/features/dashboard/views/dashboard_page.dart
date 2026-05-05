@@ -48,23 +48,6 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   @override
-  void initState() {
-    super.initState();
-    _loadUserSession(); 
-  }
-
-  // Mengambil data dari session
-  Future<void> _loadUserSession() async {
-    final role = await SessionService.getRole() ?? 'penghuni'; 
-    final nama = await SessionService.getNama() ?? 'User';
-    
-    setState(() {
-      _userRole = role;
-      _userName = nama;
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: backgroundColor,
