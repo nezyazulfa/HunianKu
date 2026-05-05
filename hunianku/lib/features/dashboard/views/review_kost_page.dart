@@ -14,28 +14,22 @@ class ReviewKostPage extends StatelessWidget {
   // 3. PERBAIKAN: Tambahkan 'const' di sini agar VS Code tidak error
   final List<Map<String, dynamic>> dummyReviews = const [
     {
-      'username': '@nezyazulfa',
+      'username': '@ndhnwdyp',
       'rating': 5,
-      'review': 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-      'date': '11.00 - 30 juni 2004',
+      'review': 'sangat direkomendasikan untuk mahasiswa yang mencari tempat tinggal yang nyaman dan aman',
+      'date': '5.00 - 5 mei 2025',
     },
     {
-      'username': '@nezyazulfa',
+      'username': '@ndhini',
       'rating': 5,
-      'review': 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-      'date': '11.00 - 30 juni 2004',
+      'review': 'saya sangat puas dengan fasilitas yang disediakan dan pelayanan yang ramah dari pemilik kost',
+      'date': '5.00 - 20 mei 2025',
     },
     {
-      'username': '@nezyazulfa',
+      'username': '@wdypw',
       'rating': 5,
-      'review': 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-      'date': '11.00 - 30 juni 2004',
-    },
-    {
-      'username': '@nezyazulfa',
-      'rating': 5,
-      'review': 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-      'date': '11.00 - 30 juni 2004',
+      'review': 'kosannya nyaman, bersih, dan dekat dengan kampus',
+      'date': '5.00 - 25 mei 2025',
     },
   ];
 
