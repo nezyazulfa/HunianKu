@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../services/auth_service.dart';
 import 'package:hunianku/features/dashboard/views/dashboard_page.dart';
+import 'package:hunianku/services/session_service.dart';
 
 class AuthController {
   final AuthService _authService = AuthService();
@@ -25,6 +26,7 @@ class AuthController {
     isLoading.value = false;
 
     if (result['success']) {
+      await SessionService.saveSession(result['user']);
       _showMessage(
         context,
         "Login Berhasil! Selamat datang ${result['user'].nama}",
@@ -77,6 +79,7 @@ class AuthController {
     isLoading.value = false;
 
     if (result['success']) {
+      await SessionService.saveSession(result['user']);
       _showMessage(
         context,
         "Login Google Berhasil! Hai ${result['user'].nama}",
@@ -85,7 +88,6 @@ class AuthController {
         context,
         MaterialPageRoute(builder: (context) => const DashboardPage()),
       );
- 
     } else if (result['needs_role'] == true) {
       // KONDISI 2: PENGGUNA BARU (Minta Role Dulu)
       _showRoleSelectionDialog(context, result['email'], result['nama']);
@@ -156,16 +158,16 @@ class AuthController {
     isLoading.value = false;
 
     if (result['success']) {
+      await SessionService.saveSession(result['user']);
       _showMessage(
         context,
         "Registrasi Google Berhasil! Hai ${result['user'].nama}",
       );
-      
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const DashboardPage()),
       );
-      
     } else {
       _showMessage(context, result['message'], isError: true);
     }

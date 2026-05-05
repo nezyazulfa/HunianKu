@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hunianku/services/session_service.dart'; // Pastikan path ini sesuai dengan project-mu
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -10,6 +11,10 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   // Indeks aktif untuk Bottom Navigation Bar
   int _selectedIndex = 0;
+  
+  // Variabel untuk menyimpan data user dari session
+  String _userRole = '';
+  String _userName = '';
 
   // Warna-warna yang digunakan (sesuai desain)
   final Color backgroundColor = const Color(0xFFEFEBE1); // Krem terang
@@ -25,7 +30,6 @@ class _DashboardPageState extends State<DashboardPage> {
       'alamat': 'Jl. Ciwaruga RT 01 RW 01',
       'jenis': 'Putri',
       'harga': 'RP. 600.000/bulan',
-      // 'image': 'assets/kost1.png', // Uncomment & ganti dengan path gambar aslimu nanti
     },
     {
       'nama': 'Kost Sedih',
@@ -40,6 +44,23 @@ class _DashboardPageState extends State<DashboardPage> {
       'harga': 'RP. 600.000/bulan',
     },
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserSession(); 
+  }
+
+  // Mengambil data dari session
+  Future<void> _loadUserSession() async {
+    final role = await SessionService.getRole() ?? 'penghuni'; 
+    final nama = await SessionService.getNama() ?? 'User';
+    
+    setState(() {
+      _userRole = role;
+      _userName = nama;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -78,8 +99,8 @@ class _DashboardPageState extends State<DashboardPage> {
                     children: [
                       // Logo Aplikasi
                       Image.asset(
-                        'assets/logo_hunianku.png', // GANTI DENGAN NAMA FILE LOGO-MU DI FOLDER ASSETS
-                        height: 36, // Sesuaikan ukuran
+                        'assets/logo_hunianku.png', 
+                        height: 36, 
                         width: 36,
                       ),
                       const SizedBox(width: 12),
@@ -104,10 +125,9 @@ class _DashboardPageState extends State<DashboardPage> {
                               hintText: 'Cari Kost',
                               hintStyle: TextStyle(color: Colors.grey, fontSize: 14),
                               prefixIcon: Icon(Icons.search, color: Colors.black87),
-                              // Ikon filter (burger/menu) di sebelah kanan
                               suffixIcon: Icon(Icons.menu, color: Colors.black87),
                               border: InputBorder.none,
-                              contentPadding: EdgeInsets.symmetric(vertical: 15), // Pusatkan teks vertikal
+                              contentPadding: EdgeInsets.symmetric(vertical: 15), 
                             ),
                           ),
                         ),
@@ -158,14 +178,23 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    // MEMANGGIL FUNGSI DENGAN 2 IKON (AKTIF & TIDAK AKTIF)
-                    _buildNavItem(Icons.home, Icons.home_outlined, 0),
-                    _buildNavItem(Icons.vpn_key, Icons.vpn_key_outlined, 1),
-                    _buildNavItem(Icons.add_circle, Icons.add_circle_outline, 2),
-                    _buildNavItem(Icons.edit, Icons.edit_outlined, 3), 
-                    _buildNavItem(Icons.person, Icons.person_outline, 4),
-                  ],
+                  children: _userRole == 'pemilik' 
+                  ? [
+                      // --- NAVBAR PEMILIK KOST ---
+                      _buildNavItem(Icons.home, Icons.home_outlined, 0),
+                      _buildNavItem(Icons.vpn_key, Icons.vpn_key_outlined, 1),
+                      _buildNavItem(Icons.add_circle, Icons.add, 2),
+                      _buildNavItem(Icons.edit, Icons.edit_outlined, 3), 
+                      _buildNavItem(Icons.person, Icons.person_outline, 4),
+                    ]
+                  : [
+                      // --- NAVBAR PENGHUNI KOST ---
+                      _buildNavItem(Icons.home, Icons.home_outlined, 0),
+                      _buildNavItem(Icons.article, Icons.article_outlined, 1),
+                      _buildNavItem(Icons.add_circle, Icons.add, 2), // Saat tidak aktif berupa +, saat aktif bulat penuh
+                      _buildNavItem(Icons.push_pin, Icons.push_pin_outlined, 3), 
+                      _buildNavItem(Icons.person, Icons.person_outline, 4),
+                    ],
                 ),
               ),
             ),
@@ -178,7 +207,7 @@ class _DashboardPageState extends State<DashboardPage> {
   // WIDGET CARD KOST
   Widget _buildKostCard(Map<String, String> data) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 20), // Jarak antar card
+      margin: const EdgeInsets.only(bottom: 20), 
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: cardColor,
@@ -199,15 +228,9 @@ class _DashboardPageState extends State<DashboardPage> {
             width: 120,
             height: 160,
             decoration: BoxDecoration(
-              color: Colors.grey[300], // Warna skeleton jika gambar belum ada
+              color: Colors.grey[300], 
               borderRadius: BorderRadius.circular(16),
-              // Jika sudah punya gambar aslinya, gunakan kode di bawah ini:
-              // image: DecorationImage(
-              //   image: AssetImage(data['image']!),
-              //   fit: BoxFit.cover,
-              // ),
             ),
-            // Placeholder icon (bisa dihapus jika gambar asli sudah dipasang)
             child: const Icon(Icons.image, size: 40, color: Colors.grey), 
           ),
           const SizedBox(width: 16),
@@ -242,7 +265,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: backgroundColor, // Menggunakan warna krem background
+                    color: backgroundColor,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -270,15 +293,14 @@ class _DashboardPageState extends State<DashboardPage> {
                 // Tombol Aksi (Lihat Ulasan & Lihat Detail)
                 Row(
                   children: [
-                    // Tombol Lihat Ulasan
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () {},
                         style: ElevatedButton.styleFrom(
                           backgroundColor: buttonYellow,
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 0), // Hilangkan padding vertikal default
-                          minimumSize: const Size(0, 32), // Tinggi tombol lebih kecil
+                          padding: const EdgeInsets.symmetric(vertical: 0),
+                          minimumSize: const Size(0, 32), 
                           elevation: 0,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
@@ -291,7 +313,6 @@ class _DashboardPageState extends State<DashboardPage> {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    // Tombol Lihat Detail
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () {},
@@ -322,7 +343,6 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   // WIDGET ICON BOTTOM NAVIGATION BAR YANG DIPERBARUI
-  // Sekarang meminta 'activeIcon' dan 'inactiveIcon'
   Widget _buildNavItem(IconData activeIcon, IconData inactiveIcon, int index) {
     bool isActive = _selectedIndex == index;
     return GestureDetector(
@@ -334,7 +354,6 @@ class _DashboardPageState extends State<DashboardPage> {
       child: Container(
         padding: const EdgeInsets.all(8),
         child: Icon(
-          // Jika isActive true, gunakan activeIcon (Filled). Jika false, gunakan inactiveIcon (Outline).
           isActive ? activeIcon : inactiveIcon,
           size: 28,
           color: isActive ? Colors.white : Colors.white.withOpacity(0.6), 
