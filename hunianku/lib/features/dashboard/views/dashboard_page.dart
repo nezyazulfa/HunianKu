@@ -301,16 +301,7 @@ class _DashboardPageState extends State<DashboardPage> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => DetailKostPage(
-                                kostData: {
-                                  'nama': kost.namakost,
-                                  'alamat_lengkap': kost.alamat,
-                                  'fasilitas': kost.daftarfasilitas,
-                                  'harga': kost.harga,
-                                  'kontak': kost.kontak,
-                                  'deskripsi': kost.deskripsi,
-                                },
-                              ),
+                              builder: (context) => DetailKostPage(kost: kost),
                             ),
                           );
                         },
