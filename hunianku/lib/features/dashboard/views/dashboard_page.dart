@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hunianku/services/session_service.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -10,6 +11,8 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   // Indeks aktif untuk Bottom Navigation Bar
   int _selectedIndex = 0;
+  String _userRole = '';
+  String _userName = '';
 
   // Warna-warna yang digunakan (sesuai desain)
   final Color backgroundColor = const Color(0xFFEFEBE1); // Krem terang
@@ -18,6 +21,22 @@ class _DashboardPageState extends State<DashboardPage> {
   final Color buttonYellow = const Color(0xFFEBC144); // Kuning mustard
   final Color buttonRed = const Color(0xFF6B1212); // Merah marun
 
+  @override
+  void initState() {
+    super.initState();
+    _loadUserSession(); 
+  }
+
+  // Mengambil data dari session
+  Future<void> _loadUserSession() async {
+    final role = await SessionService.getRole() ?? 'penghuni'; 
+    final nama = await SessionService.getNama() ?? 'User';
+    
+    setState(() {
+      _userRole = role;
+      _userName = nama;
+    });
+  }
   // Data dummy (sementara) untuk list kost
   final List<Map<String, String>> dummyKostData = [
     {
@@ -158,13 +177,9 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildNavItem(Icons.home, 0),
-                    _buildNavItem(Icons.vpn_key_outlined, 1),
-                    _buildNavItem(Icons.add, 2),
-                    _buildNavItem(Icons.edit_square, 3), // Atau Icons.chat_bubble_outline tergantung fungsi
-                    _buildNavItem(Icons.person_outline, 4),
-                  ],
+                  children: _userRole == 'pemilik' 
+                      ? _buildPemilikMenu() 
+                      : _buildPenghuniMenu(),
                 ),
               ),
             ),
@@ -172,6 +187,26 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
       ),
     );
+  }
+
+  // --- FUNGSI MENU UNTUK PEMILIK ---
+  List<Widget> _buildPemilikMenu() {
+    return [
+      _buildNavItem(Icons.home, 0),             // Beranda Kost-nya
+      _buildNavItem(Icons.add_business, 1),      // Tambah Kost
+      _buildNavItem(Icons.chat_bubble_outline, 2),// Pesan/Ulasan dari Penghuni
+      _buildNavItem(Icons.person_outline, 3),    // Profil Pemilik
+    ];
+  }
+
+  // --- FUNGSI MENU UNTUK PENGHUNI ---
+  List<Widget> _buildPenghuniMenu() {
+    return [
+      _buildNavItem(Icons.home, 0),              // Cari Kost
+      _buildNavItem(Icons.bookmark_border, 1),   // Bookmark Kost
+      _buildNavItem(Icons.note_alt_outlined, 2), // Catatan Survei (Offline)
+      _buildNavItem(Icons.person_outline, 3),    // Profil Penghuni
+    ];
   }
 
   // WIDGET CARD KOST
