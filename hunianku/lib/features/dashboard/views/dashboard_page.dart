@@ -93,9 +93,14 @@ class _DashboardPageState extends State<DashboardPage> {
                               ),
                             ],
                           ),
-                          child: const TextField(
-                            decoration: InputDecoration(
-                              hintText: 'Cari Kost',
+                          // HAPUS kata 'const' di sini, dan tambahkan fungsi onChanged
+                          child: TextField(
+                            onChanged: (value) {
+                              // Panggil fungsi search tiap kali user mengetik
+                              _controller.searchKost(value);
+                            },
+                            decoration: const InputDecoration(
+                              hintText: 'Cari Kost (Nama / Lokasi)', // Sedikit kuperjelas
                               hintStyle: TextStyle(color: Colors.grey, fontSize: 14),
                               prefixIcon: Icon(Icons.search, color: Colors.black87),
                               suffixIcon: Icon(Icons.menu, color: Colors.black87),
