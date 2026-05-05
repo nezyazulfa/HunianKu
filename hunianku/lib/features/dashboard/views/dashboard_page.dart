@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hunianku/features/auth/views/profil_page.dart';
 import 'package:hunianku/services/session_service.dart'; 
 import 'package:hunianku/features/dashboard/views/detail_kost_page.dart'; 
 import 'package:hunianku/features/dashboard/controllers/dashboard_controller.dart';
@@ -57,7 +58,7 @@ class _DashboardPageState extends State<DashboardPage> {
       const Center(child: Text("Halaman Dokumen/Key")), // Index 1
       const AddKostPage(),   // Index 2: Halaman Tambah Kost
       const Center(child: Text("Halaman Edit/Pin")),   // Index 3
-      const Center(child: Text("Halaman Profil")),     // Index 4
+      const ProfilePage(),     // Index 4
     ];
 
     return Scaffold(
@@ -162,9 +163,13 @@ class _DashboardPageState extends State<DashboardPage> {
                       ),
                     ],
                   ),
-                  child: const TextField(
-                    decoration: InputDecoration(
-                      hintText: 'Cari Kost',
+                  child: TextField(
+                    onChanged: (value) {
+                      // Panggil fungsi search tiap kali user mengetik
+                      _controller.searchKost(value);
+                    },
+                    decoration: const InputDecoration(
+                      hintText: 'Cari Kost (Nama / Lokasi / Fasilitas)',
                       hintStyle: TextStyle(color: Colors.grey, fontSize: 14),
                       prefixIcon: Icon(Icons.search, color: Colors.black87),
                       suffixIcon: Icon(Icons.menu, color: Colors.black87),
