@@ -28,13 +28,13 @@ class _DashboardPageState extends State<DashboardPage> {
       // 'image': 'assets/kost1.png', // Uncomment & ganti dengan path gambar aslimu nanti
     },
     {
-      'nama': 'Kost Bahagia',
+      'nama': 'Kost Sedih',
       'alamat': 'Jl. Ciwaruga RT 01 RW 01',
       'jenis': 'Putri',
       'harga': 'RP. 600.000/bulan',
     },
     {
-      'nama': 'Kost Bahagia',
+      'nama': 'Kost Senang',
       'alamat': 'Jl. Ciwaruga RT 01 RW 01',
       'jenis': 'Putri',
       'harga': 'RP. 600.000/bulan',
@@ -159,11 +159,12 @@ class _DashboardPageState extends State<DashboardPage> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    _buildNavItem(Icons.home, 0),
-                    _buildNavItem(Icons.vpn_key_outlined, 1),
-                    _buildNavItem(Icons.add, 2),
-                    _buildNavItem(Icons.edit_square, 3), // Atau Icons.chat_bubble_outline tergantung fungsi
-                    _buildNavItem(Icons.person_outline, 4),
+                    // MEMANGGIL FUNGSI DENGAN 2 IKON (AKTIF & TIDAK AKTIF)
+                    _buildNavItem(Icons.home, Icons.home_outlined, 0),
+                    _buildNavItem(Icons.vpn_key, Icons.vpn_key_outlined, 1),
+                    _buildNavItem(Icons.add_circle, Icons.add_circle_outline, 2),
+                    _buildNavItem(Icons.edit, Icons.edit_outlined, 3), 
+                    _buildNavItem(Icons.person, Icons.person_outline, 4),
                   ],
                 ),
               ),
@@ -196,7 +197,7 @@ class _DashboardPageState extends State<DashboardPage> {
           // Gambar Kost
           Container(
             width: 120,
-            height: 120,
+            height: 160,
             decoration: BoxDecoration(
               color: Colors.grey[300], // Warna skeleton jika gambar belum ada
               borderRadius: BorderRadius.circular(16),
@@ -320,8 +321,9 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  // WIDGET ICON BOTTOM NAVIGATION BAR
-  Widget _buildNavItem(IconData icon, int index) {
+  // WIDGET ICON BOTTOM NAVIGATION BAR YANG DIPERBARUI
+  // Sekarang meminta 'activeIcon' dan 'inactiveIcon'
+  Widget _buildNavItem(IconData activeIcon, IconData inactiveIcon, int index) {
     bool isActive = _selectedIndex == index;
     return GestureDetector(
       onTap: () {
@@ -332,9 +334,9 @@ class _DashboardPageState extends State<DashboardPage> {
       child: Container(
         padding: const EdgeInsets.all(8),
         child: Icon(
-          icon,
+          // Jika isActive true, gunakan activeIcon (Filled). Jika false, gunakan inactiveIcon (Outline).
+          isActive ? activeIcon : inactiveIcon,
           size: 28,
-          // Ikon aktif warnanya putih pekat, yang non-aktif agak redup
           color: isActive ? Colors.white : Colors.white.withOpacity(0.6), 
         ),
       ),
