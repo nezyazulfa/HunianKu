@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:hunianku/services/session_service.dart'; 
+import 'package:hunianku/features/dashboard/views/detail_kost_page.dart'; 
 import 'package:hunianku/features/dashboard/controllers/dashboard_controller.dart';
 import 'package:hunianku/features/dashboard/model/kost_model.dart';
 import 'package:hunianku/services/session_service.dart';
@@ -14,6 +16,8 @@ class _DashboardPageState extends State<DashboardPage> {
   final DashboardController _controller = DashboardController();
   // Indeks aktif untuk Bottom Navigation Bar
   int _selectedIndex = 0;
+  
+  // Variabel untuk menyimpan data user dari session
   String _userRole = '';
   String _userName = '';
 
@@ -29,6 +33,23 @@ class _DashboardPageState extends State<DashboardPage> {
     super.initState();
     // Ambil data kost secara otomatis saat halaman pertama kali dimuat
     _controller.fetchKosts();
+    _loadUserSession(); 
+  }
+
+  // Mengambil data dari session
+  Future<void> _loadUserSession() async {
+    final role = await SessionService.getRole() ?? 'penghuni'; 
+    final nama = await SessionService.getNama() ?? 'User';
+    
+    setState(() {
+      _userRole = role;
+      _userName = nama;
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
     _loadUserSession(); 
   }
 
@@ -170,8 +191,22 @@ class _DashboardPageState extends State<DashboardPage> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: _userRole == 'pemilik' 
-                      ? _buildPemilikMenu() 
-                      : _buildPenghuniMenu(),
+                  ? [
+                      // --- NAVBAR PEMILIK KOST ---
+                      _buildNavItem(Icons.home, Icons.home_outlined, 0),
+                      _buildNavItem(Icons.vpn_key, Icons.vpn_key_outlined, 1),
+                      _buildNavItem(Icons.add_circle, Icons.add, 2),
+                      _buildNavItem(Icons.edit, Icons.edit_outlined, 3), 
+                      _buildNavItem(Icons.person, Icons.person_outline, 4),
+                    ]
+                  : [
+                      // --- NAVBAR PENGHUNI KOST ---
+                      _buildNavItem(Icons.home, Icons.home_outlined, 0),
+                      _buildNavItem(Icons.article, Icons.article_outlined, 1),
+                      _buildNavItem(Icons.add_circle, Icons.add, 2), // Saat tidak aktif berupa +, saat aktif bulat penuh
+                      _buildNavItem(Icons.push_pin, Icons.push_pin_outlined, 3), 
+                      _buildNavItem(Icons.person, Icons.person_outline, 4),
+                    ],
                 ),
               ),
             ),
@@ -179,26 +214,6 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
       ),
     );
-  }
-
-  // --- FUNGSI MENU UNTUK PEMILIK ---
-  List<Widget> _buildPemilikMenu() {
-    return [
-      _buildNavItem(Icons.home, 0),             // Beranda Kost-nya
-      _buildNavItem(Icons.add_business, 1),      // Tambah Kost
-      _buildNavItem(Icons.chat_bubble_outline, 2),// Pesan/Ulasan dari Penghuni
-      _buildNavItem(Icons.person_outline, 3),    // Profil Pemilik
-    ];
-  }
-
-  // --- FUNGSI MENU UNTUK PENGHUNI ---
-  List<Widget> _buildPenghuniMenu() {
-    return [
-      _buildNavItem(Icons.home, 0),              // Cari Kost
-      _buildNavItem(Icons.bookmark_border, 1),   // Bookmark Kost
-      _buildNavItem(Icons.note_alt_outlined, 2), // Catatan Survei (Offline)
-      _buildNavItem(Icons.person_outline, 3),    // Profil Penghuni
-    ];
   }
 
   // WIDGET CARD KOST
@@ -222,7 +237,7 @@ class _DashboardPageState extends State<DashboardPage> {
         children: [
           Container(
             width: 120,
-            height: 120,
+            height: 160,
             decoration: BoxDecoration(
               color: Colors.grey[300],
               borderRadius: BorderRadius.circular(16),
@@ -298,7 +313,14 @@ class _DashboardPageState extends State<DashboardPage> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => DetailKostPage(kostData: data),
+                            ),
+                          );
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: buttonRed,
                           foregroundColor: Colors.white,
@@ -322,8 +344,8 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  // WIDGET ICON BOTTOM NAVIGATION BAR
-  Widget _buildNavItem(IconData icon, int index) {
+  // WIDGET ICON BOTTOM NAVIGATION BAR YANG DIPERBARUI
+  Widget _buildNavItem(IconData activeIcon, IconData inactiveIcon, int index) {
     bool isActive = _selectedIndex == index;
     return GestureDetector(
       onTap: () {
@@ -334,7 +356,7 @@ class _DashboardPageState extends State<DashboardPage> {
       child: Container(
         padding: const EdgeInsets.all(8),
         child: Icon(
-          icon,
+          isActive ? activeIcon : inactiveIcon,
           size: 28,
           color: isActive ? Colors.white : Colors.white.withOpacity(0.6), 
         ),
