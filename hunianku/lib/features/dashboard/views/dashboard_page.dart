@@ -70,7 +70,7 @@ class _DashboardPageState extends State<DashboardPage> {
             // Konten berubah sesuai index yang dipilih
             pages[_selectedIndex],
 
-            // Navbar tetap berada di paling atas (Stack layer teratas)
+            // BOTTOM NAVIGATION BAR (Tetap Sama)
             Positioned(
               left: 0,
               right: 0,
