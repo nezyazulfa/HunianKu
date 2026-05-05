@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:hunianku/features/auth/views/profil_page.dart';
 import 'package:hunianku/services/session_service.dart'; 
 import 'package:hunianku/features/dashboard/views/detail_kost_page.dart'; 
-import 'package:hunianku/features/dashboard/views/review_kost_page.dart';
 import 'package:hunianku/features/dashboard/controllers/dashboard_controller.dart';
 import 'package:hunianku/features/dashboard/model/kost_model.dart';
 import 'package:hunianku/features/tambah_kost/views/tambah_kost_page.dart';
@@ -58,7 +58,7 @@ class _DashboardPageState extends State<DashboardPage> {
       const Center(child: Text("Halaman Dokumen/Key")), // Index 1
       const AddKostPage(),   // Index 2: Halaman Tambah Kost
       const Center(child: Text("Halaman Edit/Pin")),   // Index 3
-      const Center(child: Text("Halaman Profil")),     // Index 4
+      const ProfilePage(),     // Index 4
     ];
 
     return Scaffold(
@@ -71,7 +71,7 @@ class _DashboardPageState extends State<DashboardPage> {
             // Konten berubah sesuai index yang dipilih
             pages[_selectedIndex],
 
-            // BOTTOM NAVIGATION BAR (Tetap Sama)
+            // Navbar tetap berada di paling atas (Stack layer teratas)
             Positioned(
               left: 0,
               right: 0,
@@ -301,14 +301,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   children: [
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ReviewKostPage(kostData: data),
-                            ),
-                          );
-                        },
+                        onPressed: () {},
                         style: ElevatedButton.styleFrom(
                           backgroundColor: buttonYellow,
                           foregroundColor: Colors.white,
