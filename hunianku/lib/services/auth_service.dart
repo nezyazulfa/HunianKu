@@ -3,7 +3,7 @@ import 'package:crypto/crypto.dart';
 import 'package:mongo_dart/mongo_dart.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:hunianku/features/user/model/user_model.dart';
+import 'package:hunianku/features/auth/model/user_model.dart';
 import 'package:hunianku/services/mongo_service.dart';
 
 class AuthService {
