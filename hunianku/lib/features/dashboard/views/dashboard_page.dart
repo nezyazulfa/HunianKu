@@ -3,7 +3,6 @@ import 'package:hunianku/services/session_service.dart';
 import 'package:hunianku/features/dashboard/views/detail_kost_page.dart'; 
 import 'package:hunianku/features/dashboard/controllers/dashboard_controller.dart';
 import 'package:hunianku/features/dashboard/model/kost_model.dart';
-import 'package:hunianku/services/session_service.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -26,7 +25,9 @@ class _DashboardPageState extends State<DashboardPage> {
   final Color cardColor = const Color(0xFFFBFBF9); // Putih tulang
   final Color primaryGreen = const Color(0xFF4A6525); // Hijau olive
   final Color buttonYellow = const Color(0xFFEBC144); // Kuning mustard
-  final Color buttonRed = const Color(0xFF6B1212); // Merah marun
+  final Color buttonRed = const Color(0xFF6B1212);
+  
+  Map<String, String>? get data => null; // Merah marun
 
   @override
   void initState() {
@@ -300,7 +301,16 @@ class _DashboardPageState extends State<DashboardPage> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => DetailKostPage(kostData: data),
+                              builder: (context) => DetailKostPage(
+                                kostData: {
+                                  'nama': kost.namakost,
+                                  'alamat_lengkap': kost.alamat,
+                                  'fasilitas': kost.daftarfasilitas,
+                                  'harga': kost.harga,
+                                  'kontak': kost.kontak,
+                                  'deskripsi': kost.deskripsi,
+                                },
+                              ),
                             ),
                           );
                         },
