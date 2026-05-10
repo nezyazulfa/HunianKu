@@ -6,6 +6,7 @@ import 'package:hunianku/features/dashboard/controllers/dashboard_controller.dar
 import 'package:hunianku/features/dashboard/model/kost_model.dart';
 import 'package:hunianku/features/tambah_kost/views/tambah_kost_page.dart';
 import 'package:hunianku/features/kost_ku/views/kost_ku_page.dart';
+import 'package:hunianku/features/draft/views/draft_page.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -55,14 +56,14 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget build(BuildContext context) {
     // List halaman yang akan ditampilkan sesuai index navbar
     final List<Widget> pages = [
-      _buildMainDashboard(), // Index 0
-
-      // Index 1: Jika dia pemilik tampilkan KostKuPage, jika penghuni tampilkan Dokumen (sementara)
+      _buildMainDashboard(), 
       _userRole == 'pemilik' ? const KostKuPage() : const Center(child: Text("Halaman Dokumen")), 
-
-      const AddKostPage(),   // Index 2
-      const Center(child: Text("Halaman Edit/Pin")),   // Index 3
-      const ProfilePage(),   // Index 4
+      const AddKostPage(),   
+      
+      // PERBAIKAN: Hapus kata 'const' sebelum DraftPage()
+      _userRole == 'pemilik' ? DraftPage() : const Center(child: Text("Halaman Pin")), 
+      
+      const ProfilePage(),  
     ];
 
     return Scaffold(
