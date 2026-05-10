@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../../services/auth_service.dart';
+import 'package:hunianku/services/auth_service.dart';
 import 'package:hunianku/features/dashboard/views/dashboard_page.dart';
 import 'package:hunianku/services/session_service.dart';
+import 'package:hunianku/features/auth/views/login_page.dart';
 
 class AuthController {
   final AuthService _authService = AuthService();
@@ -94,6 +95,36 @@ class AuthController {
     } else {
       if (result['message'] != 'Login Google dibatalkan') {
         _showMessage(context, result['message'], isError: true);
+      }
+    }
+  }
+
+  Future<void> logout(BuildContext context) async {
+    isLoading.value = true;
+
+    try {
+      // 1. Hapus token/cache dari database lokal (termasuk Google Sign Out)
+      await _authService.logout();
+
+      // 2. Bersihkan data user dari Session
+      await SessionService.clearSession(); // Pastikan fungsi clearSession() sudah ada di SessionService ya!
+
+      isLoading.value = false;
+
+      // 3. Arahkan kembali ke halaman Login dan hapus semua riwayat halaman (Biar tidak bisa di-Back)
+      if (context.mounted) {
+        _showMessage(context, "Anda berhasil keluar.");
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginPage()),
+          (Route<dynamic> route) =>
+              false, // false artinya buang semua route sebelumnya
+        );
+      }
+    } catch (e) {
+      isLoading.value = false;
+      if (context.mounted) {
+        _showMessage(context, "Gagal keluar: $e", isError: true);
       }
     }
   }
