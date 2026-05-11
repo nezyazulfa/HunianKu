@@ -34,7 +34,7 @@ class UserModel {
 
   factory UserModel.fromMap(Map<String, dynamic> map) {
     return UserModel(
-      id: (map['_id'] as ObjectId).oid, 
+      id: map['_id'] != null ? (map['_id'] as ObjectId).oid : null,
       iduser: map['iduser'] ?? '',
       password: map['password'] ?? '',
       email: map['email'] ?? '',

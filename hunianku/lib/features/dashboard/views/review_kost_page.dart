@@ -1,37 +1,49 @@
 import 'package:flutter/material.dart';
+import 'package:hunianku/features/dashboard/model/kost_model.dart';
+import 'package:hunianku/features/review/model/review_model.dart';
+import 'package:hunianku/services/review_service.dart';
 
-class ReviewKostPage extends StatelessWidget {
-  // 1. PERBAIKAN: Tambahkan tanda tanya (?) agar aman jika datanya kosong
-  final Map<String, String>? kostData;
+class ReviewKostPage extends StatefulWidget {
+  // Menerima data kost yang sedang diklik
+  final KostModel kost;
 
-  // 2. PERBAIKAN: Hapus kata 'required' karena sekarang datanya boleh kosong
-  const ReviewKostPage({super.key, this.kostData});
+  const ReviewKostPage({super.key, required this.kost});
+
+  @override
+  State<ReviewKostPage> createState() => _ReviewKostPageState();
+}
+
+class _ReviewKostPageState extends State<ReviewKostPage> {
+  final ReviewService _reviewService = ReviewService();
+  
+  List<ReviewModel> _reviews = [];
+  bool _isLoading = true;
 
   final Color backgroundColor = const Color(0xFFEFEBE1); 
   final Color containerColor = const Color(0xFFFBFBF9); 
   final Color cardColor = Colors.white; 
 
-  // 3. PERBAIKAN: Tambahkan 'const' di sini agar VS Code tidak error
-  final List<Map<String, dynamic>> dummyReviews = const [
-    {
-      'username': '@ndhnwdyp',
-      'rating': 5,
-      'review': 'sangat direkomendasikan untuk mahasiswa yang mencari tempat tinggal yang nyaman dan aman',
-      'date': '5.00 - 5 mei 2025',
-    },
-    {
-      'username': '@ndhini',
-      'rating': 5,
-      'review': 'saya sangat puas dengan fasilitas yang disediakan dan pelayanan yang ramah dari pemilik kost',
-      'date': '5.00 - 20 mei 2025',
-    },
-    {
-      'username': '@wdypw',
-      'rating': 5,
-      'review': 'kosannya nyaman, bersih, dan dekat dengan kampus',
-      'date': '5.00 - 25 mei 2025',
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _fetchReviews();
+  }
+
+  // Fungsi mengambil ulasan dari database
+  Future<void> _fetchReviews() async {
+    try {
+      final data = await _reviewService.getReviewsByKost(widget.kost.idkost);
+      setState(() {
+        _reviews = data;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      debugPrint("Error mengambil ulasan: $e");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -77,15 +89,19 @@ class ReviewKostPage extends StatelessWidget {
               ),
               const SizedBox(height: 16),
 
-              // --- LIST ULASAN ---
+              // --- LIST ULASAN DARI MONGODB ---
               Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
-                  itemCount: dummyReviews.length,
-                  itemBuilder: (context, index) {
-                    return _buildReviewCard(dummyReviews[index]);
-                  },
-                ),
+                child: _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : _reviews.isEmpty
+                        ? const Center(child: Text("Belum ada ulasan untuk kost ini."))
+                        : ListView.builder(
+                            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
+                            itemCount: _reviews.length,
+                            itemBuilder: (context, index) {
+                              return _buildReviewCard(_reviews[index]);
+                            },
+                          ),
               ),
             ],
           ),
@@ -94,7 +110,11 @@ class ReviewKostPage extends StatelessWidget {
     );
   }
 
-  Widget _buildReviewCard(Map<String, dynamic> review) {
+  // Menerima parameter ReviewModel asli dari database
+  Widget _buildReviewCard(ReviewModel review) {
+    // Parsing rating dari string ke integer (default 5 jika gagal)
+    int starCount = int.tryParse(review.rating) ?? 5;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       padding: const EdgeInsets.all(20),
@@ -121,10 +141,12 @@ class ReviewKostPage extends StatelessWidget {
                   color: Colors.grey[300],
                   shape: BoxShape.circle,
                 ),
+                child: const Icon(Icons.person, size: 20, color: Colors.white),
               ),
               const SizedBox(width: 12),
               Text(
-                review['username'] ?? 'User', // Aman dari null
+                // Mengambil nama user dari relasi database
+                review.user?.nama ?? 'Pengguna Anonim', 
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -134,15 +156,18 @@ class ReviewKostPage extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
+          
+          // Bintang sesuai data rating
           Row(
             children: List.generate(
-              review['rating'] ?? 5, // Aman dari null
+              starCount, 
               (index) => const Icon(Icons.star, color: Color(0xFFEBC144), size: 18),
             ),
           ),
+          
           const SizedBox(height: 12),
           Text(
-            review['review'] ?? '', // Aman dari null
+            review.komentar,
             style: const TextStyle(
               fontSize: 13,
               color: Colors.black87,
@@ -151,7 +176,7 @@ class ReviewKostPage extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            review['date'] ?? '', // Aman dari null
+            review.tanggal,
             style: TextStyle(
               fontSize: 11,
               color: Colors.grey[400],
