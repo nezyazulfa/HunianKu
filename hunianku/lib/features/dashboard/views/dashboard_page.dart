@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hunianku/features/auth/views/profil_page.dart';
 import 'package:hunianku/services/session_service.dart'; 
 import 'package:hunianku/features/dashboard/views/detail_kost_page.dart'; 
+import 'package:hunianku/features/dashboard/views/review_kost_page.dart';
 import 'package:hunianku/features/dashboard/controllers/dashboard_controller.dart';
 import 'package:hunianku/features/dashboard/model/kost_model.dart';
 import 'package:hunianku/features/tambah_kost/views/tambah_kost_page.dart';
@@ -29,8 +30,6 @@ class _DashboardPageState extends State<DashboardPage> {
   final Color primaryGreen = const Color(0xFF4A6525); // Hijau olive
   final Color buttonYellow = const Color(0xFFEBC144); // Kuning mustard
   final Color buttonRed = const Color(0xFF6B1212);
-  
-  Map<String, String>? get data => null; // Merah marun
 
   @override
   void initState() {
@@ -305,7 +304,14 @@ class _DashboardPageState extends State<DashboardPage> {
                   children: [
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ReviewKostPage(kost: kost),
+                            ),
+                          );
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: buttonYellow,
                           foregroundColor: Colors.white,

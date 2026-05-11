@@ -43,13 +43,13 @@ class KostModel {
 
   factory KostModel.fromMap(Map<String, dynamic> map) {
     return KostModel(
-      id: (map['_id'] as ObjectId).oid,
+      id: map['_id'] != null ? (map['_id'] as ObjectId).oid : null,
       idkost: map['idkost'] ?? '',
       namakost: map['namakost'] ?? '',
       jenis: map['jenis'] ?? '',
       alamat: map['alamat'] ?? '',
       lokasi: map['lokasi'] ?? '',
-      harga: map['harga'] ?? '',
+      harga: map['harga']?.toString() ?? '',
       kontak: map['kontak'] ?? '',
       daftarfasilitas: map['daftarfasilitas'] ?? '',
       deskripsi: map['deskripsi'] ?? '',
