@@ -6,6 +6,8 @@ import 'package:hunianku/features/dashboard/controllers/dashboard_controller.dar
 import 'package:hunianku/features/dashboard/model/kost_model.dart';
 import 'package:hunianku/features/tambah_kost/views/tambah_kost_page.dart';
 import 'package:hunianku/features/kost_ku/views/kost_ku_page.dart';
+import 'package:hunianku/features/note/views/note_page.dart';
+import 'package:hunianku/features/note/views/tambah_note_page.dart'; 
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -28,9 +30,9 @@ class _DashboardPageState extends State<DashboardPage> {
   final Color cardColor = const Color(0xFFFBFBF9); // Putih tulang
   final Color primaryGreen = const Color(0xFF4A6525); // Hijau olive
   final Color buttonYellow = const Color(0xFFEBC144); // Kuning mustard
-  final Color buttonRed = const Color(0xFF6B1212);
+  final Color buttonRed = const Color(0xFF6B1212); // Merah marun
   
-  Map<String, String>? get data => null; // Merah marun
+  Map<String, String>? get data => null; 
 
   @override
   void initState() {
@@ -55,13 +57,15 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget build(BuildContext context) {
     // List halaman yang akan ditampilkan sesuai index navbar
     final List<Widget> pages = [
-      _buildMainDashboard(), // Index 0
+      _buildMainDashboard(), // Index 0 (Home)
 
-      // Index 1: Jika dia pemilik tampilkan KostKuPage, jika penghuni tampilkan Dokumen (sementara)
-      _userRole == 'pemilik' ? const KostKuPage() : const Center(child: Text("Halaman Dokumen")), 
+      // Index 1 (Daftar Catatan)
+      _userRole == 'pemilik' ? const KostKuPage() : const NotePage(), 
 
-      const AddKostPage(),   // Index 2
-      const Center(child: Text("Halaman Edit/Pin")),   // Index 3
+      // Index 2 (Tombol Tambah)
+      _userRole == 'pemilik' ? const AddKostPage() : const TambahNotePage(), 
+
+      const Center(child: Text("Halaman Pin")),   // Index 3
       const ProfilePage(),   // Index 4
     ];
 
