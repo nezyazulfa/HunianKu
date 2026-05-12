@@ -26,6 +26,12 @@ class SessionService {
     return prefs.getString(_keyUserNama);
   }
 
+  // PERBAIKAN: Mengambil ID user saat ini
+  static Future<String?> getIdUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_keyUserId);
+  }
+
   // Menghapus data saat logout
   static Future<void> clearSession() async {
     final prefs = await SharedPreferences.getInstance();

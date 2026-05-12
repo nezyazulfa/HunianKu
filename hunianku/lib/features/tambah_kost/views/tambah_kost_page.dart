@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hunianku/features/dashboard/model/kost_model.dart';
 import 'package:hunianku/features/tambah_kost/controllers/tambah_kost_controller.dart';
+import 'package:hunianku/services/session_service.dart';
 
 class AddKostPage extends StatefulWidget {
   const AddKostPage({super.key});
@@ -21,31 +22,46 @@ class _AddKostPageState extends State<AddKostPage> {
   final TextEditingController _kontakController = TextEditingController();
 
   // State untuk radio/toggle button
-  String _selectedKategori = 'Campur'; // Default terpilih
-  String _selectedStatus = 'Full'; // Default terpilih
+  String _selectedKategori = 'Campur'; 
+  String _selectedStatus = 'Full';
+  String _currentIdUser = '';
 
   // Warna sesuai palet desain
-  final Color backgroundColor = const Color(0xFFEFEBE1); // Krem terang
+  final Color backgroundColor = const Color(0xFFEFEBE1); 
   final Color cardColor = const Color(0x80FBFBF9); 
-  final Color primaryGreen = const Color(0xFF4A6525); // Hijau olive
-  final Color primaryRed = const Color(0xFF6B1212); // Merah marun
+  final Color primaryGreen = const Color(0xFF4A6525);
+  final Color primaryRed = const Color(0xFF6B1212); 
   final Color inputBackgroundColor = Colors.white;
 
   KostModel _buatObjekKost() {
-  return KostModel(
-    // Buat ID sementara yang unik menggunakan timestamp (waktu saat ini)
-    idkost: 'K-${DateTime.now().millisecondsSinceEpoch}', 
-    namakost: _namaController.text.trim(),
-    jenis: _selectedKategori,
-    alamat: _alamatController.text.trim(),
-    lokasi: _gmapsController.text.trim(),
-    harga: _hargaController.text.trim(),
-    kontak: _kontakController.text.trim(),
-    daftarfasilitas: _fasilitasController.text.trim(),
-    deskripsi: _deskripsiController.text.trim(),
-    status: _selectedStatus,
-  );
-}
+    return KostModel(
+      // Buat ID sementara yang unik menggunakan timestamp (waktu saat ini)
+      idkost: 'K-${DateTime.now().millisecondsSinceEpoch}', 
+      iduser: _currentIdUser,
+      namakost: _namaController.text.trim(),
+      jenis: _selectedKategori,
+      alamat: _alamatController.text.trim(),
+      lokasi: _gmapsController.text.trim(),
+      harga: _hargaController.text.trim(),
+      kontak: _kontakController.text.trim(),
+      daftarfasilitas: _fasilitasController.text.trim(),
+      deskripsi: _deskripsiController.text.trim(),
+      status: _selectedStatus,
+    );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPemilikId();
+  }
+
+  Future<void> _loadPemilikId() async {
+    final id = await SessionService.getIdUser();
+    setState(() {
+      _currentIdUser = id ?? '';
+    });
+  }
 
   @override
   void dispose() {
@@ -250,7 +266,7 @@ class _AddKostPageState extends State<AddKostPage> {
                   ],
                 ),
               ),
-              const SizedBox(height: 60), // Spasi bawah ekstra agar tidak mentok
+              const SizedBox(height: 60), 
             ],
           ),
         ),
@@ -267,7 +283,7 @@ class _AddKostPageState extends State<AddKostPage> {
     return Container(
       decoration: BoxDecoration(
         color: inputBackgroundColor,
-        borderRadius: BorderRadius.circular(16), // Rounded pill
+        borderRadius: BorderRadius.circular(16), 
       ),
       child: TextField(
         controller: controller,

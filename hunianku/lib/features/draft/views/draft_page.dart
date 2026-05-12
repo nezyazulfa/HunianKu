@@ -17,7 +17,9 @@ class _DraftPageState extends State<DraftPage> {
   final Color cardColor = const Color(0xFFFBFBF9); 
   final Color buttonYellow = const Color(0xFFEBC144); 
   final Color buttonRed = const Color(0xFF6B1212); 
-  final Color primaryGreen = const Color(0xFF4A6525); 
+  final Color primaryGreen = const Color(0xFF4A6525);
+  
+  Map<String, String>? get dataForEdit => null; 
 
   @override
   void initState() {
@@ -168,23 +170,10 @@ class _DraftPageState extends State<DraftPage> {
                     // TOMBOL EDIT
                     IconButton(
                       onPressed: () {
-                        // Karena EditKostPage mengharapkan Map<String, String>, kita mapping datanya:
-                        final Map<String, String> dataForEdit = {
-                          'idkost': kost.idkost,
-                          'nama': kost.namakost,
-                          'deskripsi': kost.deskripsi,
-                          'alamat': kost.alamat,
-                          'link_gmaps': kost.lokasi,
-                          'fasilitas': kost.daftarfasilitas,
-                          'harga': kost.harga,
-                          'kontak': kost.kontak,
-                          'jenis': kost.jenis,
-                        };
-
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => EditKostPage(initialData: dataForEdit),
+                            builder: (context) => EditKostPage(initialData: dataForEdit ?? {}, kostData: kost, isDraft: true,),
                           ),
                         ).then((_) {
                           // Refresh data saat kembali dari halaman edit (jaga-jaga jika di-save)
