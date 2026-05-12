@@ -1,15 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:hunianku/features/dashboard/model/kost_model.dart';
+import 'package:hunianku/features/kost_ku/controllers/kost_ku_controller.dart';
 
 class EditKostPage extends StatefulWidget {
-  final Map<String, String> initialData;
+  final KostModel kostData; 
+  final bool isDraft;
 
-  const EditKostPage({super.key, required this.initialData});
+  const EditKostPage({super.key, required this.kostData, this.isDraft = false, required Map<String, String> initialData});
 
   @override
   State<EditKostPage> createState() => _EditKostPageState();
 }
 
 class _EditKostPageState extends State<EditKostPage> {
+  final KostKuController _controller = KostKuController();
+
   late TextEditingController _namaController;
   late TextEditingController _deskripsiController;
   late TextEditingController _alamatController;
@@ -29,15 +34,17 @@ class _EditKostPageState extends State<EditKostPage> {
   @override
   void initState() {
     super.initState();
-    _namaController = TextEditingController(text: widget.initialData['nama']);
-    _deskripsiController = TextEditingController(text: widget.initialData['deskripsi'] ?? '');
-    _alamatController = TextEditingController(text: widget.initialData['alamat']);
-    _gmapsController = TextEditingController(text: widget.initialData['link_gmaps'] ?? '');
-    _fasilitasController = TextEditingController(text: widget.initialData['fasilitas'] ?? '');
-    _hargaController = TextEditingController(text: widget.initialData['harga']);
-    _kontakController = TextEditingController(text: widget.initialData['kontak'] ?? '');
+    // Isi field dengan data dari MongoDB
+    _namaController = TextEditingController(text: widget.kostData.namakost);
+    _deskripsiController = TextEditingController(text: widget.kostData.deskripsi);
+    _alamatController = TextEditingController(text: widget.kostData.alamat);
+    _gmapsController = TextEditingController(text: widget.kostData.lokasi);
+    _fasilitasController = TextEditingController(text: widget.kostData.daftarfasilitas);
+    _hargaController = TextEditingController(text: widget.kostData.harga);
+    _kontakController = TextEditingController(text: widget.kostData.kontak);
     
-    _selectedKategori = widget.initialData['jenis'] ?? 'Campur';
+    _selectedKategori = widget.kostData.jenis.isNotEmpty ? widget.kostData.jenis : 'Campur';
+    _selectedStatus = widget.kostData.status.isNotEmpty ? widget.kostData.status : 'Tersedia';
   }
 
   @override
@@ -50,6 +57,24 @@ class _EditKostPageState extends State<EditKostPage> {
     _hargaController.dispose();
     _kontakController.dispose();
     super.dispose();
+  }
+
+  // Fungsi untuk mengompilasi data form ke dalam objek KostModel baru (untuk Update)
+  KostModel _buatObjekUpdate() {
+    return KostModel(
+      id: widget.kostData.id, 
+      idkost: widget.kostData.idkost, 
+      iduser: widget.kostData.iduser, 
+      namakost: _namaController.text.trim(),
+      jenis: _selectedKategori,
+      alamat: _alamatController.text.trim(),
+      lokasi: _gmapsController.text.trim(),
+      harga: _hargaController.text.trim(),
+      kontak: _kontakController.text.trim(),
+      daftarfasilitas: _fasilitasController.text.trim(),
+      deskripsi: _deskripsiController.text.trim(),
+      status: _selectedStatus,
+    );
   }
 
   @override
@@ -92,10 +117,7 @@ class _EditKostPageState extends State<EditKostPage> {
               const SizedBox(height: 24),
 
               // --- KATEGORI KOST ---
-              const Text(
-                'Kategori',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.black87),
-              ),
+              const Text('Kategori', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.black87)),
               const SizedBox(height: 12),
               Row(
                 children: [
@@ -109,10 +131,7 @@ class _EditKostPageState extends State<EditKostPage> {
               const SizedBox(height: 20),
 
               // --- STATUS KOST ---
-              const Text(
-                'Status',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.black87),
-              ),
+              const Text('Status', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.black87)),
               const SizedBox(height: 12),
               Row(
                 children: [
@@ -123,36 +142,49 @@ class _EditKostPageState extends State<EditKostPage> {
               ),
               const SizedBox(height: 32),
               
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        side: BorderSide(color: primaryGreen),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        minimumSize: const Size(0, 48),
+              // --- TOMBOL AKSI ---
+              ValueListenableBuilder<bool>(
+                valueListenable: _controller.isLoading,
+                builder: (context, isLoading, child) {
+                  if (isLoading) {
+                    return Center(child: CircularProgressIndicator(color: primaryGreen));
+                  }
+                  return Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () => Navigator.pop(context),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            side: BorderSide(color: primaryGreen),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            minimumSize: const Size(0, 48),
+                          ),
+                          child: Text('Batal', style: TextStyle(color: primaryGreen, fontWeight: FontWeight.bold)),
+                        ),
                       ),
-                      child: Text('Batal', style: TextStyle(color: primaryGreen, fontWeight: FontWeight.bold)),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        // TODO: Logika Update ke MongoDB
-                        Navigator.pop(context);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryGreen,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        minimumSize: const Size(0, 48),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            if (_namaController.text.isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Nama kost tidak boleh kosong!")));
+                              return;
+                            }
+                            final kostUpdate = _buatObjekUpdate();
+                            _controller.simpanEditKost(context, kostUpdate, widget.isDraft);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: primaryGreen,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            minimumSize: const Size(0, 48),
+                          ),
+                          child: const Text('Simpan', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        ),
                       ),
-                      child: const Text('Simpan', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                    ),
-                  ),
-                ],
+                    ],
+                  );
+                }
               )
             ],
           ),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hunianku/features/dashboard/model/kost_model.dart';
 import 'package:hunianku/features/review/model/review_model.dart';
-import 'package:hunianku/services/review_service.dart';
+import 'package:hunianku/features/review/controllers/review_controller.dart'; 
 
 class ReviewKostPage extends StatefulWidget {
   // Menerima data kost yang sedang diklik
@@ -14,10 +14,8 @@ class ReviewKostPage extends StatefulWidget {
 }
 
 class _ReviewKostPageState extends State<ReviewKostPage> {
-  final ReviewService _reviewService = ReviewService();
-  
-  List<ReviewModel> _reviews = [];
-  bool _isLoading = true;
+  // Panggil Controller yang baru saja dibuat
+  final ReviewController _controller = ReviewController();
 
   final Color backgroundColor = const Color(0xFFEFEBE1); 
   final Color containerColor = const Color(0xFFFBFBF9); 
@@ -26,23 +24,8 @@ class _ReviewKostPageState extends State<ReviewKostPage> {
   @override
   void initState() {
     super.initState();
-    _fetchReviews();
-  }
-
-  // Fungsi mengambil ulasan dari database
-  Future<void> _fetchReviews() async {
-    try {
-      final data = await _reviewService.getReviewsByKost(widget.kost.idkost);
-      setState(() {
-        _reviews = data;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-      debugPrint("Error mengambil ulasan: $e");
-    }
+    // Meminta Controller mengambil data saat halaman dibuka
+    _controller.fetchReviews(widget.kost.idkost);
   }
 
   @override
@@ -89,19 +72,33 @@ class _ReviewKostPageState extends State<ReviewKostPage> {
               ),
               const SizedBox(height: 16),
 
-              // --- LIST ULASAN DARI MONGODB ---
+              // --- LIST ULASAN DARI MONGODB (Diubah memakai ValueListenableBuilder) ---
               Expanded(
-                child: _isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : _reviews.isEmpty
-                        ? const Center(child: Text("Belum ada ulasan untuk kost ini."))
-                        : ListView.builder(
-                            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
-                            itemCount: _reviews.length,
-                            itemBuilder: (context, index) {
-                              return _buildReviewCard(_reviews[index]);
-                            },
-                          ),
+                child: ValueListenableBuilder<bool>(
+                  valueListenable: _controller.isLoading,
+                  builder: (context, isLoading, child) {
+                    if (isLoading) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    return ValueListenableBuilder<List<ReviewModel>>(
+                      valueListenable: _controller.reviewsList,
+                      builder: (context, reviews, child) {
+                        if (reviews.isEmpty) {
+                          return const Center(child: Text("Belum ada ulasan untuk kost ini."));
+                        }
+
+                        return ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
+                          itemCount: reviews.length,
+                          itemBuilder: (context, index) {
+                            return _buildReviewCard(reviews[index]);
+                          },
+                        );
+                      },
+                    );
+                  },
+                ),
               ),
             ],
           ),
@@ -110,9 +107,8 @@ class _ReviewKostPageState extends State<ReviewKostPage> {
     );
   }
 
-  // Menerima parameter ReviewModel asli dari database
+  // WIDGET CARD REVIEW
   Widget _buildReviewCard(ReviewModel review) {
-    // Parsing rating dari string ke integer (default 5 jika gagal)
     int starCount = int.tryParse(review.rating) ?? 5;
 
     return Container(
@@ -145,7 +141,6 @@ class _ReviewKostPageState extends State<ReviewKostPage> {
               ),
               const SizedBox(width: 12),
               Text(
-                // Mengambil nama user dari relasi database
                 review.user?.nama ?? 'Pengguna Anonim', 
                 style: const TextStyle(
                   fontSize: 16,
@@ -157,7 +152,6 @@ class _ReviewKostPageState extends State<ReviewKostPage> {
           ),
           const SizedBox(height: 8),
           
-          // Bintang sesuai data rating
           Row(
             children: List.generate(
               starCount, 
