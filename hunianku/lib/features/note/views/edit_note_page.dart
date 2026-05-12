@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 class EditNotePage extends StatefulWidget {
+  // Menerima data awal dari catatan yang ingin diedit
   final Map<String, String> noteData;
 
   const EditNotePage({super.key, required this.noteData});
@@ -20,7 +21,7 @@ class _EditNotePageState extends State<EditNotePage> {
   @override
   void initState() {
     super.initState();
-    // Mengisi controller dengan data catatan yang sudah ada
+    // Mengisi controller dengan isi catatan lama yang diterima dari parameter
     _noteController = TextEditingController(text: widget.noteData['note']);
   }
 
@@ -77,7 +78,7 @@ class _EditNotePageState extends State<EditNotePage> {
                 ),
                 child: Column(
                   children: [
-                    // --- KARTU INPUT CATATAN (Floating Card) ---
+                    // --- KARTU INPUT CATATAN (Sesuai desain gambar) ---
                     Expanded(
                       child: Container(
                         margin: const EdgeInsets.only(top: 32, left: 24, right: 24, bottom: 24),
@@ -96,6 +97,7 @@ class _EditNotePageState extends State<EditNotePage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            // Nama Kost (Statis & Tidak dapat diubah sesuai permintaan)
                             Text(
                               widget.noteData['kost'] ?? 'Kost Bahagia',
                               style: const TextStyle(
@@ -105,6 +107,8 @@ class _EditNotePageState extends State<EditNotePage> {
                               ),
                             ),
                             const SizedBox(height: 16),
+                            
+                            // Field Edit Isi Catatan
                             Expanded(
                               child: TextField(
                                 controller: _noteController,
@@ -131,7 +135,13 @@ class _EditNotePageState extends State<EditNotePage> {
                       padding: const EdgeInsets.only(bottom: 40.0, top: 8.0), 
                       child: ElevatedButton(
                         onPressed: () {
-                          // Logika update data ke database
+                          // TODO: Panggil fungsi update di Controller untuk mengirim perubahan ke database
+                          // Contoh: _noteController.updateNote(widget.noteData['id'], _noteController.text);
+                          
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Catatan berhasil diperbarui!')),
+                          );
+                          
                           Navigator.pop(context);
                         },
                         style: ElevatedButton.styleFrom(

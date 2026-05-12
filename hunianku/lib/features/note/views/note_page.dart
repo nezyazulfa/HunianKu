@@ -15,17 +15,17 @@ class NotePage extends StatelessWidget {
     {
       'kost': 'Kost Bahagia',
       'note': 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-      'date': '11.00 - 30 juni 2004',
+      'date': '12.00 - 5 Januari 2005',
     },
     {
-      'kost': 'Kost Bahagia',
+      'kost': 'Kost Gembira',
       'note': 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-      'date': '11.00 - 30 juni 2004',
+      'date': '12.00 - 5 Mei 2005',
     },
     {
-      'kost': 'Kost Bahagia',
+      'kost': 'Kost Senang',
       'note': 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-      'date': '11.00 - 30 juni 2004',
+      'date': '12.00 - 5 Januari 2015',
     },
   ];
 
