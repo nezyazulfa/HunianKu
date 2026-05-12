@@ -4,7 +4,7 @@ import 'package:hunianku/features/dashboard/model/kost_model.dart';
 
 class KostService {
   final MongoService _mongo = MongoService();
-  final String _collectionName = 'kost'; // Pastikan nama tabel di MongoDB adalah 'kost'
+  final String _collectionName = 'kost';
 
   // Fungsi untuk mengambil semua data kost
   Future<List<KostModel>> getAllKost() async {
@@ -47,6 +47,27 @@ class KostService {
       await box.put(kostBaru.idkost, kostBaru);
     } catch (e) {
       throw Exception('Gagal menyimpan antrean: $e');
+    }
+  }
+
+  // 4. Mengambil semua data draf dari Hive
+  Future<List<KostModel>> getAllDrafts() async {
+    try {
+      var box = await Hive.openBox<KostModel>('draft_box');
+      // Mengambil semua nilai (values) yang ada di dalam box dan mengubahnya jadi List
+      return box.values.toList();
+    } catch (e) {
+      throw Exception('Gagal mengambil draf lokal: $e');
+    }
+  }
+
+  // 5. Menghapus draf dari Hive berdasarkan ID
+  Future<void> hapusDraftLokal(String idkost) async {
+    try {
+      var box = await Hive.openBox<KostModel>('draft_box');
+      await box.delete(idkost); // Hapus berdasarkan idkost sebagai key
+    } catch (e) {
+      throw Exception('Gagal menghapus draf: $e');
     }
   }
 }
