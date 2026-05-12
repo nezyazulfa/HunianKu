@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:hunianku/features/auth/views/profil_page.dart';
+import 'package:hunianku/features/dashboard/views/review_kost_page.dart';
+import 'package:hunianku/features/note/views/note_page.dart';
+import 'package:hunianku/features/note/views/tambah_note_page.dart'; 
 import 'package:hunianku/services/session_service.dart'; 
 import 'package:hunianku/features/dashboard/views/detail_kost_page.dart'; 
 import 'package:hunianku/features/dashboard/controllers/dashboard_controller.dart';
@@ -17,66 +20,56 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> {
   final DashboardController _controller = DashboardController();
-  // Indeks aktif untuk Bottom Navigation Bar
   int _selectedIndex = 0;
   
-  // Variabel untuk menyimpan data user dari session
   String _userRole = '';
-  String _userName = '';
 
-  // Warna-warna yang digunakan (sesuai desain)
-  final Color backgroundColor = const Color(0xFFEFEBE1); // Krem terang
-  final Color cardColor = const Color(0xFFFBFBF9); // Putih tulang
-  final Color primaryGreen = const Color(0xFF4A6525); // Hijau olive
-  final Color buttonYellow = const Color(0xFFEBC144); // Kuning mustard
+  final Color backgroundColor = const Color(0xFFEFEBE1); 
+  final Color cardColor = const Color(0xFFFBFBF9); 
+  final Color primaryGreen = const Color(0xFF4A6525); 
+  final Color buttonYellow = const Color(0xFFEBC144); 
   final Color buttonRed = const Color(0xFF6B1212);
-  
-  Map<String, String>? get data => null; // Merah marun
 
   @override
   void initState() {
     super.initState();
-    // Ambil data kost secara otomatis saat halaman pertama kali dimuat
     _controller.fetchKosts();
     _loadUserSession(); 
   }
 
-  // Mengambil data dari session
   Future<void> _loadUserSession() async {
     final role = await SessionService.getRole() ?? 'penghuni'; 
-    final nama = await SessionService.getNama() ?? 'User';
-    
     setState(() {
       _userRole = role;
-      _userName = nama;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // List halaman yang akan ditampilkan sesuai index navbar
+    // --- GABUNGAN MENU NAVBAR KAMU & TEMANMU ---
     final List<Widget> pages = [
-      _buildMainDashboard(), 
-      _userRole == 'pemilik' ? const KostKuPage() : const Center(child: Text("Halaman Dokumen")), 
-      const AddKostPage(),   
+      _buildMainDashboard(), // Index 0 (Home)
+
+      // Index 1 (Kost Ku untuk Pemilik, Daftar Catatan untuk Penghuni)
+      _userRole == 'pemilik' ? const KostKuPage() : const NotePage(), 
+
+      // Index 2 (Tambah Kost untuk Pemilik, Tambah Note untuk Penghuni)
+      _userRole == 'pemilik' ? const AddKostPage() : const TambahNotePage(), 
+
+      // Index 3 (Draft untuk Pemilik, Pin untuk Penghuni)
+      _userRole == 'pemilik' ? DraftPage() : const Center(child: Text("Halaman Pin")),   
       
-      // PERBAIKAN: Hapus kata 'const' sebelum DraftPage()
-      _userRole == 'pemilik' ? DraftPage() : const Center(child: Text("Halaman Pin")), 
-      
-      const ProfilePage(),  
+      const ProfilePage(),   // Index 4 (Profil)
     ];
 
     return Scaffold(
       backgroundColor: backgroundColor,
-      // Mencegah Navbar terdorong ke atas oleh keyboard saat mengetik
       resizeToAvoidBottomInset: false,
       body: SafeArea(
         child: Stack(
           children: [
-            // Konten berubah sesuai index yang dipilih
             pages[_selectedIndex],
 
-            // Navbar tetap berada di paling atas (Stack layer teratas)
             Positioned(
               left: 0,
               right: 0,
@@ -123,7 +116,6 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  // FUNGSI UNTUK MENAMPILKAN DASHBOARD UTAMA (SEARCH & LIST KOST)
   Widget _buildMainDashboard() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -143,7 +135,6 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
         const SizedBox(height: 20),
 
-        // SEARCH BAR & LOGO 
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
           child: Row(
@@ -170,7 +161,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   ),
                   child: TextField(
                     onChanged: (value) {
-                      // Panggil fungsi search tiap kali user mengetik
+                      // Fitur pencarian dari temanmu
                       _controller.searchKost(value);
                     },
                     decoration: const InputDecoration(
@@ -189,7 +180,6 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
         const SizedBox(height: 20),
 
-        // LIST KOST
         Expanded(
           child: ValueListenableBuilder<bool>(
             valueListenable: _controller.isLoading,
@@ -226,7 +216,6 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  // WIDGET CARD KOST
   Widget _buildKostCard(KostModel kost) {
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
@@ -260,7 +249,7 @@ class _DashboardPageState extends State<DashboardPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  kost.namakost, // Diambil dari model
+                  kost.namakost,
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w800,
@@ -271,7 +260,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  kost.alamat, // Diambil dari model
+                  kost.alamat,
                   style: const TextStyle(fontSize: 12, color: Colors.black54),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -284,7 +273,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    kost.jenis, // Diambil dari model
+                    kost.jenis,
                     style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
@@ -294,7 +283,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  kost.harga, // Diambil dari model
+                  kost.harga,
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
@@ -306,7 +295,15 @@ class _DashboardPageState extends State<DashboardPage> {
                   children: [
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          // Navigasi ke fitur Review Kost milik temanmu
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ReviewKostPage(kost: kost),
+                            ),
+                          );
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: buttonYellow,
                           foregroundColor: Colors.white,
@@ -327,7 +324,7 @@ class _DashboardPageState extends State<DashboardPage> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => DetailKostPage(kost: kost),
+                              builder: (context) => DetailKostPage(kost: kost), // Menggunakan format baru dari temanmu
                             ),
                           );
                         },
@@ -354,7 +351,6 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  // WIDGET ICON BOTTOM NAVIGATION BAR YANG DIPERBARUI
   Widget _buildNavItem(IconData activeIcon, IconData inactiveIcon, int index) {
     bool isActive = _selectedIndex == index;
     return GestureDetector(

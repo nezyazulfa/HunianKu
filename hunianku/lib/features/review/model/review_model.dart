@@ -33,11 +33,11 @@ class ReviewModel {
 
   factory ReviewModel.fromMap(Map<String, dynamic> map) {
     return ReviewModel(
-      id: (map['_id'] as ObjectId).oid,
+      id: map['_id'] != null ? (map['_id'] as ObjectId).oid : null,
       idreview: map['idreview'] ?? '',
       user: map['user'] != null ? UserModel.fromMap(map['user']) : null,
       kost: map['kost'] != null ? KostModel.fromMap(map['kost']) : null,
-      rating: map['rating'] ?? '',
+      rating: map['rating']?.toString() ?? '5', 
       komentar: map['komentar'] ?? '',
       tanggal: map['tanggal'] ?? '',
     );
