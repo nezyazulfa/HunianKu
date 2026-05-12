@@ -13,6 +13,11 @@ class SessionService {
     await prefs.setString(_keyUserNama, user.nama);
     await prefs.setString(_keyUserRole, user.role); 
   }
+  // Mengambil ID user saat ini
+  static Future<String?> getUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_keyUserId);
+  }
 
   // Mengambil role user saat ini
   static Future<String?> getRole() async {

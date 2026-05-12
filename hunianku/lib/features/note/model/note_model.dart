@@ -17,12 +17,15 @@ class NoteModel {
   final KostModel? kost;
   @HiveField(4)
   final String catatan;
+  @HiveField(5)
+  final String tanggal;
   NoteModel({
     this.id,
     required this.idnote,
     this.user, 
     this.kost,
     required this.catatan,
+    required this.tanggal,
   });
 
   factory NoteModel.fromMap(Map<String, dynamic> map) {
@@ -32,6 +35,7 @@ class NoteModel {
       user: map['user'] != null ? UserModel.fromMap(map['user']) : null,
       kost: map['kost'] != null ? KostModel.fromMap(map['kost']) : null,
       catatan: map['catatan'] ?? '',
+      tanggal: map['tanggal'] ?? '',
     );
   }
 
@@ -42,6 +46,7 @@ class NoteModel {
       'user': user?.toMap(),
       'kost': kost?.toMap(),
       'catatan': catatan,
+      'tanggal': tanggal,
     };
   }
 }
