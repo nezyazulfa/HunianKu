@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hunianku/features/auth/views/profil_page.dart';
-import 'package:hunianku/features/dashboard/views/review_kost_page.dart';
+import 'package:hunianku/features/review/views/review_kost_page.dart';
 import 'package:hunianku/features/note/views/note_page.dart';
 import 'package:hunianku/features/note/views/tambah_note_page.dart'; 
 import 'package:hunianku/services/session_service.dart'; 
