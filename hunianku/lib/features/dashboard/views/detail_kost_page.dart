@@ -1,9 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:hunianku/features/dashboard/model/kost_model.dart';
 
-class DetailKostPage extends StatelessWidget {
+class DetailKostPage extends StatefulWidget {
   final KostModel kost;
   const DetailKostPage({super.key, required this.kost});
+
+  @override
+  State<DetailKostPage> createState() => _DetailKostPageState();
+}
+
+class _DetailKostPageState extends State<DetailKostPage> {
+  // Variabel untuk menyimpan status apakah kost ini di-bookmark atau tidak
+  bool isBookmarked = false;
 
   final Color backgroundColor = const Color(0xFFEFEBE1); // Warna krem background atas
   final Color cardColor = const Color(0x80FBFBF9); 
@@ -13,10 +21,10 @@ class DetailKostPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: backgroundColor,
       body: SafeArea(
-        bottom: false, // Membiarkan konten memanjang sampai bawah layar
+        bottom: false, 
         child: Container(
           width: double.infinity,
-          margin: const EdgeInsets.only(top: 16), // Memberi sedikit jarak dari status bar
+          margin: const EdgeInsets.only(top: 16), 
           decoration: BoxDecoration(
             color: cardColor,
             borderRadius: const BorderRadius.only(
@@ -26,7 +34,7 @@ class DetailKostPage extends StatelessWidget {
           ),
           child: Column(
             children: [
-              // --- HEADER (Tombol Back & Judul) ---
+              // --- HEADER (Tombol Back, Judul, & Tombol Bintang) ---
               Padding(
                 padding: const EdgeInsets.only(top: 16, left: 8, right: 8),
                 child: Row(
@@ -37,7 +45,7 @@ class DetailKostPage extends StatelessWidget {
                     ),
                     Expanded(
                       child: Text(
-                        kost.namakost,
+                        widget.kost.namakost,
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                           fontSize: 22,
@@ -46,7 +54,33 @@ class DetailKostPage extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 48), // Spasi kosong penyeimbang agar teks benar-benar di tengah
+                    // --- TOMBOL BOOKMARK BINTANG DI KANAN ATAS ---
+                    IconButton(
+                      icon: Icon(
+                        isBookmarked ? Icons.star : Icons.star_border,
+                        color: const Color(0xFFEBC144), // Kuning mustard
+                        size: 28,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          isBookmarked = !isBookmarked; // Toggle status bookmark
+                        });
+                        
+                        // Menampilkan notifikasi kecil di bawah
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              isBookmarked 
+                                ? 'Ditambahkan ke Bookmark' 
+                                : 'Dihapus dari Bookmark'
+                            ),
+                            duration: const Duration(seconds: 1),
+                          ),
+                        );
+
+                        // TODO: Panggil fungsi Controller di sini untuk menyimpan/menghapus bookmark di Database MongoDB
+                      },
+                    ),
                   ],
                 ),
               ),
@@ -62,8 +96,8 @@ class DetailKostPage extends StatelessWidget {
                       // Gambar Kost
                       Center(
                         child: Container(
-                          width: 220, // Lebar gambar disesuaikan
-                          height: 260, // Tinggi gambar disesuaikan
+                          width: 220, 
+                          height: 260, 
                           decoration: BoxDecoration(
                             color: Colors.grey[300],
                             borderRadius: BorderRadius.circular(24),
@@ -74,37 +108,25 @@ class DetailKostPage extends StatelessWidget {
                                 offset: const Offset(0, 10),
                               ),
                             ],
-                            // TODO: Nanti jika sudah punya gambar asli, aktifkan kode di bawah ini
-                            // image: DecorationImage(
-                            //   image: AssetImage('assets/kost_pink.png'),
-                            //   fit: BoxFit.cover,
-                            // ),
                           ),
                           child: const Icon(Icons.image, size: 60, color: Colors.grey),
                         ),
                       ),
                       const SizedBox(height: 32),
-                      // jenis
-                       _buildDetailItem('Jenis Kost:', kost.jenis),
+                      _buildDetailItem('Jenis Kost:', widget.kost.jenis),
                       const SizedBox(height: 16),
-                      // Alamat
-                      _buildDetailItem('Alamat:', kost.alamat),
+                      _buildDetailItem('Alamat:', widget.kost.alamat),
                       const SizedBox(height: 16),
-                      // Fasilitas
-                      _buildDetailItem('Lokasi:',kost.lokasi),
+                      _buildDetailItem('Lokasi:', widget.kost.lokasi),
                       const SizedBox(height: 16),
-                      // Harga
-                      _buildDetailItem('Harga:','Rp. ${kost.harga}/bulan'),
+                      _buildDetailItem('Harga:', 'Rp. ${widget.kost.harga}/bulan'),
                       const SizedBox(height: 16),
-                      // Fasilitas
-                      _buildDetailItem('Fasilitas:', kost.daftarfasilitas),
+                      _buildDetailItem('Fasilitas:', widget.kost.daftarfasilitas),
                       const SizedBox(height: 16),
-                      // Contact Person
-                      _buildDetailItem('Contact Person:',kost.kontak ),
+                      _buildDetailItem('Contact Person:', widget.kost.kontak),
                       const SizedBox(height: 16),
-                      // Deskripsi
-                      _buildDetailItem('Deskripsi:',kost.deskripsi),
-                      const SizedBox(height: 40), // Spasi bawah agar tidak mentok
+                      _buildDetailItem('Deskripsi:', widget.kost.deskripsi),
+                      const SizedBox(height: 40), 
                     ],
                   ),
                 ),
@@ -116,7 +138,6 @@ class DetailKostPage extends StatelessWidget {
     );
   }
 
-  // Widget bantuan agar tidak perlu menulis kode berulang untuk setiap judul & isi
   Widget _buildDetailItem(String title, String content) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -135,7 +156,7 @@ class DetailKostPage extends StatelessWidget {
           style: const TextStyle(
             fontSize: 14,
             color: Colors.black87,
-            height: 1.4, // Memberikan jarak spasi antar baris agar nyaman dibaca
+            height: 1.4, 
           ),
         ),
       ],

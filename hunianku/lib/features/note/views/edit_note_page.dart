@@ -80,7 +80,7 @@ class _EditNotePageState extends State<EditNotePage> {
                 ),
                 child: Column(
                   children: [
-                    // --- KARTU INPUT CATATAN (Floating Card) ---
+                    // --- KARTU INPUT CATATAN (Sesuai desain gambar) ---
                     Expanded(
                       child: Container(
                         margin: const EdgeInsets.only(top: 32, left: 24, right: 24, bottom: 24),
@@ -99,6 +99,7 @@ class _EditNotePageState extends State<EditNotePage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            // Nama Kost (Statis & Tidak dapat diubah sesuai permintaan)
                             Text(
                               widget.noteData.kost?.namakost ?? 'Kost Bahagia',
                               style: const TextStyle(
@@ -108,6 +109,8 @@ class _EditNotePageState extends State<EditNotePage> {
                               ),
                             ),
                             const SizedBox(height: 16),
+                            
+                            // Field Edit Isi Catatan
                             Expanded(
                               child: TextField(
                                 controller: _noteController,

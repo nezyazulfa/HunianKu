@@ -10,6 +10,7 @@ import 'package:hunianku/features/dashboard/model/kost_model.dart';
 import 'package:hunianku/features/tambah_kost/views/tambah_kost_page.dart';
 import 'package:hunianku/features/kost_ku/views/kost_ku_page.dart';
 import 'package:hunianku/features/draft/views/draft_page.dart';
+import 'package:hunianku/features/bookmark/views/bookmark_page.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -57,7 +58,7 @@ class _DashboardPageState extends State<DashboardPage> {
       _userRole == 'pemilik' ? const AddKostPage() : const TambahNotePage(), 
 
       // Index 3 (Draft untuk Pemilik, Pin untuk Penghuni)
-      _userRole == 'pemilik' ? DraftPage() : const Center(child: Text("Halaman Pin")),   
+      _userRole == 'pemilik' ? DraftPage() : const BookmarkPage(),   
       
       const ProfilePage(),   // Index 4 (Profil)
     ];
