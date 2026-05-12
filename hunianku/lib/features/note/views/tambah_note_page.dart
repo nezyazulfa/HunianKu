@@ -1,4 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:hunianku/features/note/controllers/note_controller.dart';
+import 'package:hunianku/features/dashboard/model/kost_model.dart';
+import 'package:hunianku/features/auth/model/user_model.dart';
+import 'package:hunianku/features/note/model/note_model.dart';
+import 'package:hunianku/services/kost_service.dart';
+import 'package:hunianku/services/session_service.dart';
 
 class TambahNotePage extends StatefulWidget {
   const TambahNotePage({super.key});
@@ -9,28 +15,47 @@ class TambahNotePage extends StatefulWidget {
 
 class _TambahNotePageState extends State<TambahNotePage> {
   final TextEditingController _noteController = TextEditingController();
-  
-  // Variabel untuk menyimpan kost yang dipilih
-  String? _selectedKost;
+  final NoteController _controller = NoteController();
+
+  List<KostModel> _kumpulanKost = [];
+  KostModel? _selectedKost;
+  UserModel? _currentUser;
 
   final Color containerColor = const Color(0xFFFBFBF9); // Putih tulang
   final Color cardColor = Colors.white; // Putih bersih
   final Color primaryGreen = const Color(0xFF4A6525); // Hijau tombol
 
-  // TODO: Nanti ganti dummy ini dengan data yang di-fetch dari Controller
-  final List<String> _kumpulanKost = [
-    'Kost Bahagia',
-    'Kost Gembira',
-    'Kost Senang',
-    'Kost Riang',
-    'Kost Ceria',
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _fetchInitialData();
+  }
+
+  // Fungsi untuk mengambil daftar kost dan user login di awal
+  Future<void> _fetchInitialData() async {
+    try {
+      final listKost = await KostService().getAllKost();
+      setState(() {
+        _kumpulanKost = listKost;
+      });
+    } catch (e) {
+      print('Gagal load kost: $e');
+    }
+    final id = await SessionService.getUserId();
+    final nama = await SessionService.getNama();
+    final role = await SessionService.getRole();
+    if (id != null) {
+      _currentUser = UserModel(
+        iduser: id,
+        nama: nama ?? 'User',
+        email: '', password: '', role: role ?? 'penghuni',
+      );
+    }
+  }
 
   // Fungsi untuk menampilkan Custom Searchable Dropdown (berupa Dialog)
   void _showKostDropdown() {
-    // Variabel lokal untuk menampung hasil pencarian di dalam dialog
-    List<String> filteredList = List.from(_kumpulanKost);
-
+    List<KostModel> filteredList = List.from(_kumpulanKost);
     showDialog(
       context: context,
       builder: (context) {
@@ -65,8 +90,7 @@ class _TambahNotePageState extends State<TambahNotePage> {
                         setStateDialog(() {
                           // Filter daftar kost berdasarkan teks yang diketik
                           filteredList = _kumpulanKost
-                              .where((kost) => kost.toLowerCase().contains(value.toLowerCase()))
-                              .toList();
+                              .where((k) => k.namakost.toLowerCase().contains(value.toLowerCase())).toList();
                         });
                       },
                     ),
@@ -78,7 +102,7 @@ class _TambahNotePageState extends State<TambahNotePage> {
                         itemCount: filteredList.length,
                         itemBuilder: (context, index) {
                           return ListTile(
-                            title: Text(filteredList[index]),
+                            title: Text(filteredList[index].namakost),
                             onTap: () {
                               // Update state utama dan tutup dialog
                               setState(() {
@@ -162,7 +186,7 @@ class _TambahNotePageState extends State<TambahNotePage> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  _selectedKost ?? 'Pilih Nama Kost',
+                                  _selectedKost?.namakost ?? 'Pilih Nama Kost',
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: _selectedKost != null ? FontWeight.w800 : FontWeight.normal,
@@ -202,30 +226,39 @@ class _TambahNotePageState extends State<TambahNotePage> {
                 // --- TOMBOL SIMPAN ---
                 Padding(
                   padding: const EdgeInsets.only(bottom: 100.0, top: 8.0), 
-                  child: ElevatedButton(
-                    onPressed: () {
-                      // Validasi sederhana
-                      if (_selectedKost == null || _noteController.text.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Pilih kost dan isi catatan terlebih dahulu!')),
-                        );
-                        return;
-                      }
+                  child: ValueListenableBuilder<bool>(
+                    valueListenable: _controller.isLoading,
+                    builder: (context, isLoading, child) {
+                      return ElevatedButton(
+                      onPressed: isLoading ? null :() async {
+                        // Validasi sederhana
+                        if (_selectedKost == null || _noteController.text.isEmpty || _currentUser == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Pilih kost dan isi catatan terlebih dahulu!')),
+                          );
+                          return;
+                        }
 
-                      // TODO: Panggil fungsi di Controller untuk menyimpan ke database.
-                      // Contoh: _noteControllerKu.tambahNote(_selectedKost!, _noteController.text);
-                      
-                      // Feedback berhasil
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Catatan berhasil disimpan!')),
-                      );
+                        final now = DateTime.now();
+                          final tanggalFormat = "${now.day.toString().padLeft(2, '0')}-${now.month.toString().padLeft(2, '0')}-${now.year} ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}";
+                          final noteBaru = NoteModel(
+                            idnote: 'NOTE-${now.millisecondsSinceEpoch}',
+                            user: _currentUser,
+                            kost: _selectedKost,
+                            catatan: _noteController.text.trim(),
+                            tanggal: tanggalFormat,
+                          );
+                          bool success = await _controller.tambahNote(noteBaru);
 
-                      // Bersihkan form setelah disave
-                      setState(() {
-                        _selectedKost = null;
-                        _noteController.clear();
-                      });
-                    },
+                        if (success && context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Catatan berhasil disimpan!')),
+                          );setState(() {
+                            _selectedKost = null;
+                            _noteController.clear();
+                          });
+                        }
+                      },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: primaryGreen,
                       foregroundColor: Colors.white,
@@ -235,10 +268,11 @@ class _TambahNotePageState extends State<TambahNotePage> {
                       ),
                       elevation: 0,
                     ),
-                    child: const Text(
-                      'Simpan',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
+                    child: isLoading 
+                            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                            : const Text('Simpan',style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),),
+                    );
+                    }
                   ),
                 ),
               ],

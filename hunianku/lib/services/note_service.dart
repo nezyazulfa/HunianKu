@@ -1,3 +1,4 @@
+import 'package:hive/hive.dart';
 import 'package:hunianku/services/mongo_service.dart';
 import 'package:mongo_dart/mongo_dart.dart';
 import 'package:hunianku/features/note/model/note_model.dart';
@@ -37,6 +38,36 @@ class NoteService {
       await collection.deleteOne(where.id(objectId));
     } catch (e) {
       throw Exception('Gagal menghapus catatan: $e');
+    }
+  }
+
+  // 1. SIMPAN KE MONGODB (Online)
+  Future<void> simpanNoteRemote(NoteModel noteBaru) async {
+    try {
+      final collection = await _mongo.getCollection(_collectionName);
+      await collection.insertOne(noteBaru.toMap());
+    } catch (e) {
+      throw Exception('Gagal menyimpan ke server: $e');
+    }
+  }
+
+  // 2. SIMPAN KE HIVE (Offline / Pending)
+  Future<void> simpanNotePendingLokal(NoteModel noteBaru) async {
+    try {
+      var box = await Hive.openBox<NoteModel>('note_pending_box');
+      await box.put(noteBaru.idnote, noteBaru);
+    } catch (e) {
+      throw Exception('Gagal menyimpan antrean lokal: $e');
+    }
+  }
+
+  // 3. AMBIL DATA DARI ANTREAN LOKAL (Agar bisa tampil saat offline)
+  Future<List<NoteModel>> getPendingNotes() async {
+    try {
+      var box = await Hive.openBox<NoteModel>('note_pending_box');
+      return box.values.toList();
+    } catch (e) {
+      return [];
     }
   }
 }

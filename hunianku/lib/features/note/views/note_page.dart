@@ -166,27 +166,6 @@ class _NotePageState extends State<NotePage> {
                     constraints: const BoxConstraints(),
                     padding: const EdgeInsets.symmetric(horizontal: 4),
                   ),
-                  const SizedBox(width: 8),
-                  // Tombol Posting
-                  ElevatedButton(
-                    onPressed: () {},
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryGreen,
-                      foregroundColor: Colors.white,
-                      minimumSize: const Size(80, 32),
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                    child: const Text(
-                      'Posting',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ],

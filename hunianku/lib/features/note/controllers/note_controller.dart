@@ -14,15 +14,41 @@ class NoteController {
     try{
       // Ambil iduser dari session lokal
       final String? userId = await SessionService.getUserId(); 
+      List<NoteModel> gabunganNotes = [];
       if (userId != null) {
-        final data = await _noteService.getnotebyuser(userId);
-        noteList.value = data;
+        try{
+          final data = await _noteService.getnotebyuser(userId);
+          gabunganNotes.addAll(data); 
+        }catch(e){
+          print('Tidak bisa akses server (Offline). Lanjut ambil data lokal.');
+        }
+        final pendingData = await _noteService.getPendingNotes();
+        final userPendingData = pendingData.where((n) => n.user?.iduser == userId).toList();
+        gabunganNotes.addAll(userPendingData);
+        noteList.value = gabunganNotes;
       }
     }catch(e){
       print('Gagal memuat catatan: $e');
     } finally {
       isLoading.value = false;
     }
+  }
+
+  // fungsi tambah note
+  Future<bool> tambahNote(NoteModel noteBaru) async {
+    isLoading.value = true;
+    bool isSuccess = false;
+    try {
+      await _noteService.simpanNoteRemote(noteBaru);
+      isSuccess = true;
+    } catch (e) {
+      // JIKA GAGAL KARENA TIDAK ADA INTERNET -> MASUK HIVE
+      await _noteService.simpanNotePendingLokal(noteBaru);
+      isSuccess = true; // Tetap dianggap sukses masuk antrean
+    } finally {
+      isLoading.value = false;
+    }
+    return isSuccess;
   }
 
   // Fungsi Simpan Editan
