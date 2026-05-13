@@ -15,14 +15,10 @@ class _ProfilePageState extends State<ProfilePage> {
   String _userRole = '';
 
   // Warna sesuai desain
-  final Color backgroundColor = const Color(0xFFEFEBE1); // Krem terang
-  final Color cardColor = const Color(0xFFFBFBF9); // Putih tulang
-  final Color buttonRed = const Color(
-    0xFF6B1212,
-  ); // Merah marun untuk tombol keluar
-  final Color avatarPlaceholderColor = const Color(
-    0xFFBCAAA4,
-  ); // Warna abu-abu kecoklatan untuk lingkaran
+  final Color backgroundColor = const Color(0xFFEFEBE1); 
+  final Color cardColor = const Color(0xFFFBFBF9); 
+  final Color buttonRed = const Color(0xFF6B1212); 
+  final Color avatarPlaceholderColor = const Color(0xFFBCAAA4); 
 
   @override
   void initState() {
@@ -37,7 +33,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
     setState(() {
       _userName = nama;
-      // Mengubah huruf pertama role menjadi kapital agar rapi (cth: "pemilik" -> "Pemilik Kost")
       if (role == 'pemilik') {
         _userRole = 'Pemilik Kost';
       } else {
@@ -60,10 +55,9 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
           content: const Text('Apakah Anda yakin ingin keluar dari akun ini?'),
           actions: [
-            // Tombol Batal
             TextButton(
               onPressed: () {
-                Navigator.of(dialogContext).pop(); // Tutup popup dialog
+                Navigator.of(dialogContext).pop(); 
               },
               child: const Text(
                 'Batal',
@@ -73,11 +67,10 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
               ),
             ),
-            // Tombol Keluar
             ElevatedButton(
               onPressed: () {
-                Navigator.of(dialogContext).pop(); // Tutup popup dialog dulu
-                _authController.logout(context); // Lalu eksekusi fungsi logout
+                Navigator.of(dialogContext).pop(); 
+                _authController.logout(context); 
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: buttonRed,
@@ -108,8 +101,7 @@ class _ProfilePageState extends State<ProfilePage> {
               'Saya',
               style: TextStyle(
                 fontSize: 24,
-                fontWeight: FontWeight
-                    .bold, // Pakai bold standar, bisa disesuaikan kalau punya custom font
+                fontWeight: FontWeight.bold, 
                 color: Colors.black87,
               ),
             ),
@@ -119,17 +111,16 @@ class _ProfilePageState extends State<ProfilePage> {
             Stack(
               alignment: Alignment.topCenter,
               children: [
-                // 1. Card Putih (Diberi margin top agar posisinya turun ke bawah)
+                // 1. Card Putih 
                 Container(
+                  width: double.infinity, // <-- DITAMBAHKAN AGAR MEMBENTANG PENUH
                   margin: const EdgeInsets.only(
-                    top:
-                        50, // Angka ini sama dengan radius avatar agar tepat di tengah
-                    left: 40,
-                    right: 40,
+                    top: 50, 
+                    left: 24, // <-- DISAMAKAN DENGAN PADDING TOMBOL (24)
+                    right: 24, // <-- DISAMAKAN DENGAN PADDING TOMBOL (24)
                   ),
                   padding: const EdgeInsets.only(
-                    top:
-                        70, // Padding atas besar untuk memberi ruang bagi avatar
+                    top: 70, 
                     bottom: 40,
                     left: 20,
                     right: 20,
@@ -169,29 +160,24 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ),
 
-                // 2. Lingkaran Avatar (Ditumpuk di atas Card)
+                // 2. Lingkaran Avatar
                 CircleAvatar(
-                  radius: 50, // Ukuran lingkaran
+                  radius: 50, 
                   backgroundColor: avatarPlaceholderColor,
-                  // Kalau nanti mau pakai foto profil dari database/asset, aktifkan ini:
-                  // backgroundImage: AssetImage('assets/default_profile.png'),
                 ),
               ],
             ),
 
             // --- SPACER ---
-            // Spacer ini akan mendorong tombol "Keluar" terus ke bagian paling bawah layar
             const Spacer(),
 
             // --- TOMBOL KELUAR ---
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              // Bungkus dengan ValueListenableBuilder untuk efek loading
+              padding: const EdgeInsets.symmetric(horizontal: 24.0), // <-- PADDING TOMBOL ADALAH 24
               child: ValueListenableBuilder<bool>(
                 valueListenable: _authController.isLoading,
                 builder: (context, isLoading, child) {
                   return ElevatedButton(
-                    // Panggil fungsi popup konfirmasi jika tidak sedang loading
                     onPressed: isLoading ? null : _showLogoutConfirmation,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: buttonRed,
@@ -202,7 +188,6 @@ class _ProfilePageState extends State<ProfilePage> {
                         borderRadius: BorderRadius.circular(16),
                       ),
                     ),
-                    // Ubah UI tombol menjadi indikator loading jika sedang proses
                     child: isLoading
                         ? const SizedBox(
                             height: 24,
@@ -224,7 +209,6 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ),
 
-            // Jarak tambahan di bawah tombol agar tidak tertutup oleh Bottom Navigation Bar
             const SizedBox(height: 100),
           ],
         ),
