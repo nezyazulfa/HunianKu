@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:hunianku/features/dashboard/model/kost_model.dart';
 import 'package:hunianku/features/review/model/review_model.dart';
 import 'package:hunianku/features/review/controllers/review_controller.dart'; 
+import 'package:hunianku/services/session_service.dart'; 
+import 'package:hunianku/features/review/views/tambah_review_page.dart';
 
 class ReviewKostPage extends StatefulWidget {
-  // Menerima data kost yang sedang diklik
   final KostModel kost;
-
   const ReviewKostPage({super.key, required this.kost});
 
   @override
@@ -14,18 +14,27 @@ class ReviewKostPage extends StatefulWidget {
 }
 
 class _ReviewKostPageState extends State<ReviewKostPage> {
-  // Panggil Controller yang baru saja dibuat
   final ReviewController _controller = ReviewController();
+  String _userRole = '';
 
   final Color backgroundColor = const Color(0xFFEFEBE1); 
   final Color containerColor = const Color(0xFFFBFBF9); 
   final Color cardColor = Colors.white; 
+  // Warna hijau olive tua agar kontras dengan ikon putih
+  final Color primaryGreen = const Color(0xFF4A6525); 
 
   @override
   void initState() {
     super.initState();
-    // Meminta Controller mengambil data saat halaman dibuka
     _controller.fetchReviews(widget.kost.idkost);
+    _loadUserRole();
+  }
+
+  Future<void> _loadUserRole() async {
+    final role = await SessionService.getRole() ?? '';
+    setState(() {
+      _userRole = role;
+    });
   }
 
   @override
@@ -72,7 +81,7 @@ class _ReviewKostPageState extends State<ReviewKostPage> {
               ),
               const SizedBox(height: 16),
 
-              // --- LIST ULASAN DARI MONGODB (Diubah memakai ValueListenableBuilder) ---
+              // --- LIST ULASAN ---
               Expanded(
                 child: ValueListenableBuilder<bool>(
                   valueListenable: _controller.isLoading,
@@ -89,7 +98,8 @@ class _ReviewKostPageState extends State<ReviewKostPage> {
                         }
 
                         return ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
+                          // Jarak bawah 100 agar kartu terakhir aman dari tombol FAB
+                          padding: const EdgeInsets.only(left: 24.0, right: 24.0, top: 8.0, bottom: 100.0),
                           itemCount: reviews.length,
                           itemBuilder: (context, index) {
                             return _buildReviewCard(reviews[index]);
@@ -104,6 +114,66 @@ class _ReviewKostPageState extends State<ReviewKostPage> {
           ),
         ),
       ),
+      // --- PERBAIKAN: FLOATING ACTION BUTTON YANG LEBIH INTERAKTIF ---
+      floatingActionButton: _userRole == 'penghuni' 
+          ? FloatingActionButton(
+              onPressed: () {
+                // --- MEMUNCULKAN POPUP KONFIRMASI ---
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return AlertDialog(
+                      backgroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      title: const Text(
+                        'Konfirmasi Penghuni',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      content: const Text(
+                        'Apakah Anda benar merupakan penghuni dari kost ini?',
+                        style: TextStyle(height: 1.4),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context), // Tutup dialog jika batal
+                          child: const Text('Bukan', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.pop(context); // Tutup dialog konfirmasi terlebih dahulu
+                            
+                            // Lanjut navigasi ke halaman form
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => TambahReviewPage(kost: widget.kost),
+                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: primaryGreen,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: const Text('Ya, Saya Penghuni', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        ),
+                      ],
+                    );
+                  },
+                );
+              },
+              backgroundColor: primaryGreen,
+              elevation: 5,
+              shape: const CircleBorder(),
+              child: const Icon(
+                Icons.rate_review_outlined, 
+                color: Colors.white, 
+                size: 25,
+              ),
+            )
+          : null,
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 
