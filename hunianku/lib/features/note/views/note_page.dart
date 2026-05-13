@@ -1,33 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:hunianku/features/note/views/edit_note_page.dart';
+import 'package:hunianku/features/note/controllers/note_controller.dart';
+import 'package:hunianku/features/note/model/note_model.dart';
 
-class NotePage extends StatelessWidget {
+class NotePage extends StatefulWidget {
   const NotePage({super.key});
 
+  @override
+  State<NotePage> createState() => _NotePageState();
+}
+
+class _NotePageState extends State<NotePage> {
+  final NoteController _controller = NoteController();
+
   final Color containerColor = const Color(0xFFFBFBF9); // Putih tulang
-  final Color cardColor = Colors.white; 
+  final Color cardColor = Colors.white;
   final Color primaryGreen = const Color(0xFF4A6525);
   final Color buttonYellow = const Color(0xFFEBC144);
   final Color buttonRed = const Color(0xFF6B1212);
 
-  // Data dummy sementara
-  final List<Map<String, String>> dummyNotes = const [
-    {
-      'kost': 'Kost Bahagia',
-      'note': 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-      'date': '12.00 - 5 Januari 2005',
-    },
-    {
-      'kost': 'Kost Gembira',
-      'note': 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-      'date': '12.00 - 5 Mei 2005',
-    },
-    {
-      'kost': 'Kost Senang',
-      'note': 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-      'date': '12.00 - 5 Januari 2015',
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _controller.featchNotes();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,18 +51,34 @@ class NotePage extends StatelessWidget {
               ),
             ),
           ),
-          
+
           // LIST CATATAN
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.only(
-                left: 24.0, 
-                right: 24.0, 
-                bottom: 100.0, // Jarak agar tidak tertutup Navbar
-              ),
-              itemCount: dummyNotes.length,
-              itemBuilder: (context, index) {
-                return _buildNoteCard(context, dummyNotes[index]);
+            child: ValueListenableBuilder<bool>(
+              valueListenable: _controller.isLoading,
+              builder: (context, isLoading, child) {
+                if (isLoading)
+                  return const Center(child: CircularProgressIndicator());
+
+                return ValueListenableBuilder<List<NoteModel>>(
+                  valueListenable: _controller.noteList,
+                  builder: (context, notes, child) {
+                    if (notes.isEmpty) {
+                      return const Center(child: Text("Belum ada catatan."));
+                    }
+                    return ListView.builder(
+                      padding: const EdgeInsets.only(
+                        left: 24.0,
+                        right: 24.0,
+                        bottom: 100.0,
+                      ),
+                      itemCount: notes.length,
+                      itemBuilder: (context, index) {
+                        return _buildNoteCard(context, notes[index]);
+                      },
+                    );
+                  },
+                );
               },
             ),
           ),
@@ -75,7 +87,7 @@ class NotePage extends StatelessWidget {
     );
   }
 
-  Widget _buildNoteCard(BuildContext context, Map<String, String> noteData) {
+  Widget _buildNoteCard(BuildContext context, NoteModel note) {
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       padding: const EdgeInsets.all(20),
@@ -95,7 +107,7 @@ class NotePage extends StatelessWidget {
         children: [
           // Judul Kost
           Text(
-            noteData['kost']!,
+            note.kost?.namakost ?? 'Kost Tidak Diketahui',
             style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w800,
@@ -106,7 +118,7 @@ class NotePage extends StatelessWidget {
 
           // Isi Catatan
           Text(
-            noteData['note']!,
+            note.catatan,
             style: const TextStyle(
               fontSize: 13,
               color: Colors.black87,
@@ -122,11 +134,8 @@ class NotePage extends StatelessWidget {
             children: [
               // Tanggal
               Text(
-                noteData['date']!,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.grey[400],
-                ),
+                note.tanggal,
+                style: TextStyle(fontSize: 11, color: Colors.grey[400]),
               ),
 
               // Tombol-tombol
@@ -138,38 +147,24 @@ class NotePage extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => EditNotePage(noteData: noteData),
-                          ),
+                          builder: (context) =>
+                              EditNotePage(noteData: note, controller: _controller),
+                        ),
                       );
                     },
                     icon: Icon(Icons.edit, color: buttonYellow),
-                    constraints: const BoxConstraints(), // Memperkecil area klik bawaan
+                    constraints:
+                        const BoxConstraints(), // Memperkecil area klik bawaan
                     padding: const EdgeInsets.symmetric(horizontal: 4),
                   ),
                   // Icon Delete
                   IconButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      _showDeleteDialog(context, note);
+                    },
                     icon: Icon(Icons.delete, color: buttonRed),
                     constraints: const BoxConstraints(),
                     padding: const EdgeInsets.symmetric(horizontal: 4),
-                  ),
-                  const SizedBox(width: 8),
-                  // Tombol Posting
-                  ElevatedButton(
-                    onPressed: () {},
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryGreen,
-                      foregroundColor: Colors.white,
-                      minimumSize: const Size(80, 32),
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                    child: const Text(
-                      'Posting',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                    ),
                   ),
                 ],
               ),
@@ -177,6 +172,66 @@ class NotePage extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+  // FUNGSI POP-UP DELETE
+  void _showDeleteDialog(BuildContext context, NoteModel note) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) { // Pakai dialogContext agar tidak bentrok
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          title: const Column( // Gunakan const agar performa UI lebih ringan
+            children: [
+              Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 60),
+              SizedBox(height: 16),
+              Text(
+                "Konfirmasi",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          content: const Text(
+            "Apakah anda yakin akan menghapus data ini?",
+            textAlign: TextAlign.center,
+          ),
+          actionsAlignment: MainAxisAlignment.spaceEvenly,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext), // Tutup pop-up
+              child: const Text("Tidak", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                // 1. Tutup pop-up dialog terlebih dahulu
+                Navigator.pop(dialogContext);
+                
+                // 2. Eksekusi hapus data MongoDB
+                if (note.id != null) {
+                  // Memanggil fungsi hapusNote dari controller yang sudah kita buat sebelumnya
+                  bool success = await _controller.hapusNote(note.id!);
+                  
+                  // 3. Tampilkan pesan sukses di bawah layar
+                  if (success && context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Catatan berhasil dihapus!'),
+                        backgroundColor: Colors.red,
+                        behavior: SnackBarBehavior.floating, // Biar melayang keren
+                      ),
+                    );
+                  }
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF6B1212), // Warna merah gelap
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text("Ya", style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        );
+      },
     );
   }
 }

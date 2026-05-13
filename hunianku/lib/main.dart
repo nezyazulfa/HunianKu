@@ -6,6 +6,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:hunianku/services/sync_service.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:hunianku/features/dashboard/model/kost_model.dart';
+import 'package:hunianku/features/auth/model/user_model.dart';
+import 'package:hunianku/features/note/model/note_model.dart';
 
 void main() async{
   WidgetsFlutterBinding.ensureInitialized();
@@ -13,6 +15,8 @@ void main() async{
   await MongoService().connect();
   await Hive.initFlutter();
   Hive.registerAdapter(KostModelAdapter());
+  Hive.registerAdapter(UserModelAdapter()); 
+  Hive.registerAdapter(NoteModelAdapter());
   SyncService().mulaiPantauInternet();
   
   runApp(const MyApp());

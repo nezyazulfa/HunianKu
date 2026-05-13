@@ -10,26 +10,29 @@ class KostModel {
   @HiveField(1)
   final String idkost;
   @HiveField(2)
-  final String namakost;
+  final String iduser;
   @HiveField(3)
-  final String jenis;
+  final String namakost;
   @HiveField(4)
-  final String alamat;
+  final String jenis;
   @HiveField(5)
-  final String lokasi;
+  final String alamat;
   @HiveField(6)
-  final String harga;
+  final String lokasi;
   @HiveField(7)
-  final String kontak;
+  final String harga;
   @HiveField(8)
-  final String daftarfasilitas;
+  final String kontak;
   @HiveField(9)
-  final String deskripsi;
+  final String daftarfasilitas;
   @HiveField(10)
+  final String deskripsi;
+  @HiveField(11)
   final String status;
   KostModel({
     this.id,
     required this.idkost,
+    required this.iduser,
     required this.namakost,
     required this.jenis,
     required this.alamat,
@@ -45,6 +48,7 @@ class KostModel {
     return KostModel(
       id: map['_id'] != null ? (map['_id'] as ObjectId).oid : null,
       idkost: map['idkost'] ?? '',
+      iduser: map['iduser'] ?? '',
       namakost: map['namakost'] ?? '',
       jenis: map['jenis'] ?? '',
       alamat: map['alamat'] ?? '',
@@ -61,6 +65,7 @@ class KostModel {
     return {
       '_id' : id != null ? ObjectId.fromHexString(id!) : ObjectId(),
       'idkost': idkost,
+      'iduser': iduser,
       'namakost': namakost,
       'jenis': jenis,
       'alamat': alamat,

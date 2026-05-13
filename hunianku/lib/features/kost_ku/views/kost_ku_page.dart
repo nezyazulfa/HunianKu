@@ -1,35 +1,28 @@
 import 'package:flutter/material.dart';
-import 'edit_kost_page.dart'; // Import ini wajib agar tidak error saat menekan tombol Edit
+import 'edit_kost_page.dart'; 
+import 'package:hunianku/features/dashboard/model/kost_model.dart';
+import 'package:hunianku/features/kost_ku/controllers/kost_ku_controller.dart';
 
-class KostKuPage extends StatelessWidget {
+class KostKuPage extends StatefulWidget {
   const KostKuPage({super.key});
+
+  @override
+  State<KostKuPage> createState() => _KostKuPageState();
+}
+
+class _KostKuPageState extends State<KostKuPage> {
+  final KostKuController _controller = KostKuController();
 
   final Color backgroundColor = const Color(0xFFEFEBE1); 
   final Color cardColor = const Color(0xFFFBFBF9); 
   final Color buttonYellow = const Color(0xFFEBC144); 
   final Color buttonRed = const Color(0xFF6B1212); 
 
-  // Dummy data sementara
-  final List<Map<String, String>> dummyKostKu = const [
-    {
-      'nama': 'Kost Bahagia',
-      'alamat': 'Jl. Ciwaruga RT 01 RW 01',
-      'jenis': 'Putri',
-      'harga': 'RP. 600.000/bulan',
-    },
-    {
-      'nama': 'Kost Bahagia',
-      'alamat': 'Jl. Ciwaruga RT 01 RW 01',
-      'jenis': 'Putri',
-      'harga': 'RP. 600.000/bulan',
-    },
-    {
-      'nama': 'Kost Bahagia',
-      'alamat': 'Jl. Ciwaruga RT 01 RW 01',
-      'jenis': 'Putri',
-      'harga': 'RP. 600.000/bulan',
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _controller.fetchKostKu();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -60,15 +53,39 @@ class KostKuPage extends StatelessWidget {
                     topRight: Radius.circular(32),
                   ),
                 ),
-                child: ListView.builder(
-                  padding: const EdgeInsets.only(
-                    top: 24.0, left: 24.0, right: 24.0, bottom: 100.0, 
-                  ),
-                  itemCount: dummyKostKu.length,
-                  itemBuilder: (context, index) {
-                    // PERBAIKAN: Melempar 'context' ke dalam fungsi
-                    return _buildKostKuCard(context, dummyKostKu[index]);
-                  },
+                child: ValueListenableBuilder<bool>(
+                  valueListenable: _controller.isLoading,
+                  builder: (context, isLoading, child) {
+                    if (isLoading) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    return ValueListenableBuilder<List<KostModel>>(
+                      valueListenable: _controller.kostKuList,
+                      builder: (context, kostKu, child) {
+                        if (kostKu.isEmpty) {
+                          return const Center(child: Text("Anda belum memiliki kost.", style: TextStyle(color: Colors.grey)));
+                        }
+
+                        // Menggunakan RefreshIndicator agar pemilik bisa me-refresh data
+                        return RefreshIndicator(
+                          onRefresh: () async {
+                            await _controller.fetchKostKu();
+                          },
+                          child: ListView.builder(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            padding: const EdgeInsets.only(
+                              top: 24.0, left: 24.0, right: 24.0, bottom: 100.0, 
+                            ),
+                            itemCount: kostKu.length,
+                            itemBuilder: (context, index) {
+                              return _buildKostKuCard(context, kostKu[index]);
+                            },
+                          ),
+                        );
+                      }
+                    );
+                  }
                 ),
               ),
             ),
@@ -78,8 +95,8 @@ class KostKuPage extends StatelessWidget {
     );
   }
 
-  // PERBAIKAN: Menambahkan parameter 'BuildContext context' di sini
-  Widget _buildKostKuCard(BuildContext context, Map<String, String> data) {
+  // WIDGET CARD (Menerima parameter KostModel)
+  Widget _buildKostKuCard(BuildContext context, KostModel kost) {
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       padding: const EdgeInsets.all(12),
@@ -112,13 +129,15 @@ class KostKuPage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  data['nama']!,
+                  kost.namakost,
                   style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.black87),
+                  maxLines: 1, overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  data['alamat']!,
+                  kost.alamat,
                   style: const TextStyle(fontSize: 12, color: Colors.black54),
+                  maxLines: 2, overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 8),
                 Container(
@@ -128,13 +147,13 @@ class KostKuPage extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    data['jenis']!,
+                    kost.jenis,
                     style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.black87),
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  data['harga']!,
+                  kost.harga,
                   style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.black87),
                 ),
                 const SizedBox(height: 8),
@@ -144,13 +163,16 @@ class KostKuPage extends StatelessWidget {
                   children: [
                     IconButton(
                       onPressed: () {
-                        // Navigasi ke EditKostPage sekarang tidak akan error
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => EditKostPage(initialData: data),
+                            // Bawa data kost utuh ke halaman Edit
+                            builder: (context) => EditKostPage(kostData: kost, initialData: {}, isDraft: false,),
                           ),
-                        );
+                        ).then((_) {
+                          // Refresh data saat kembali dari halaman edit
+                          _controller.fetchKostKu();
+                        });
                       },
                       icon: Icon(Icons.edit, color: buttonYellow, size: 28),
                       padding: EdgeInsets.zero,
@@ -159,7 +181,7 @@ class KostKuPage extends StatelessWidget {
                     const SizedBox(width: 16),
                     IconButton(
                       onPressed: () {
-                        _showDeleteDialog(context); // Panggil fungsi dialog
+                        _showDeleteDialog(context, kost.idkost);
                       },
                       icon: Icon(Icons.delete, color: buttonRed, size: 28),
                       padding: EdgeInsets.zero,
@@ -175,43 +197,43 @@ class KostKuPage extends StatelessWidget {
     );
   }
 
-  // FUNGSI POP-UP DELETE (Sudah ditambahkan parameter context)
-  void _showDeleteDialog(BuildContext context) {
+  void _showDeleteDialog(BuildContext context, String idkost) {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          title: Column(
-            children: const [
+          title: const Column(
+            children: [
               Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 60),
               SizedBox(height: 16),
               Text(
-                "Konfirmasi",
+                "Hapus Kost?",
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
             ],
           ),
           content: const Text(
-            "Apakah anda yakin akan menghapus data ini?",
+            "Data kost ini akan dihapus permanen dari server. Tindakan ini tidak bisa dibatalkan.",
             textAlign: TextAlign.center,
           ),
           actionsAlignment: MainAxisAlignment.spaceEvenly,
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Tidak", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text("Batal", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
             ),
             ElevatedButton(
               onPressed: () {
-                // TODO: Eksekusi hapus data MongoDB di sini
-                Navigator.pop(context);
+                Navigator.pop(dialogContext); // Tutup dialog
+                // Panggil controller untuk hapus dari database cloud
+                _controller.hapusKost(context, idkost); 
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF6B1212),
+                backgroundColor: buttonRed,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
-              child: const Text("Ya", style: TextStyle(color: Colors.white)),
+              child: const Text("Ya, Hapus", style: TextStyle(color: Colors.white)),
             ),
           ],
         );

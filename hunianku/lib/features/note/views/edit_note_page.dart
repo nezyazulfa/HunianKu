@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:hunianku/features/note/model/note_model.dart';
+import 'package:hunianku/features/note/controllers/note_controller.dart';
 
 class EditNotePage extends StatefulWidget {
-  // Menerima data awal dari catatan yang ingin diedit
-  final Map<String, String> noteData;
+  final NoteModel noteData;
+  final NoteController controller;
 
-  const EditNotePage({super.key, required this.noteData});
+  const EditNotePage({super.key, required this.noteData, required this.controller});
 
   @override
   State<EditNotePage> createState() => _EditNotePageState();
@@ -21,8 +23,8 @@ class _EditNotePageState extends State<EditNotePage> {
   @override
   void initState() {
     super.initState();
-    // Mengisi controller dengan isi catatan lama yang diterima dari parameter
-    _noteController = TextEditingController(text: widget.noteData['note']);
+    // Mengisi controller dengan data catatan yang sudah ada
+    _noteController = TextEditingController(text: widget.noteData.catatan);
   }
 
   @override
@@ -99,7 +101,7 @@ class _EditNotePageState extends State<EditNotePage> {
                           children: [
                             // Nama Kost (Statis & Tidak dapat diubah sesuai permintaan)
                             Text(
-                              widget.noteData['kost'] ?? 'Kost Bahagia',
+                              widget.noteData.kost?.namakost ?? 'Kost Bahagia',
                               style: const TextStyle(
                                 fontSize: 22,
                                 fontWeight: FontWeight.w900,
@@ -133,17 +135,26 @@ class _EditNotePageState extends State<EditNotePage> {
                     // --- TOMBOL SIMPAN ---
                     Padding(
                       padding: const EdgeInsets.only(bottom: 40.0, top: 8.0), 
-                      child: ElevatedButton(
-                        onPressed: () {
-                          // TODO: Panggil fungsi update di Controller untuk mengirim perubahan ke database
-                          // Contoh: _noteController.updateNote(widget.noteData['id'], _noteController.text);
-                          
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Catatan berhasil diperbarui!')),
-                          );
-                          
-                          Navigator.pop(context);
-                        },
+                      child: ValueListenableBuilder<bool>(
+                        valueListenable: widget.controller.isLoading,
+                        builder: (context, isLoading, child) {
+                          return ElevatedButton(
+                          onPressed: isLoading ? null: () async {
+                            final updatedNote = NoteModel(
+                                id: widget.noteData.id, // Pertahankan ID asli
+                                idnote: widget.noteData.idnote,
+                                user: widget.noteData.user,
+                                kost: widget.noteData.kost,
+                                tanggal: widget.noteData.tanggal, // Tetap gunakan tanggal lama atau ubah jadi waktu sekarang
+                                catatan: _noteController.text.trim(), // Isi teks terbaru
+                              );
+                              // 2. Lempar ke controller
+                              bool success = await widget.controller.simpanEditNote(updatedNote);
+                              if (success && context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Catatan berhasil diperbarui!')));
+                                Navigator.pop(context); // Kembali ke halaman list note
+                              }
+                          },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: primaryGreen,
                           foregroundColor: Colors.white,
@@ -153,10 +164,11 @@ class _EditNotePageState extends State<EditNotePage> {
                           ),
                           elevation: 0,
                         ),
-                        child: const Text(
-                          'Simpan',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
+                        child: isLoading 
+                                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                                : const Text('Simpan', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        );
+                        },
                       ),
                     ),
                   ],

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hunianku/features/auth/views/profil_page.dart';
-import 'package:hunianku/features/dashboard/views/review_kost_page.dart';
+import 'package:hunianku/features/review/views/review_kost_page.dart';
 import 'package:hunianku/features/note/views/note_page.dart';
 import 'package:hunianku/features/note/views/tambah_note_page.dart'; 
 import 'package:hunianku/services/session_service.dart'; 
@@ -196,17 +196,25 @@ class _DashboardPageState extends State<DashboardPage> {
                     return const Center(child: Text("Belum ada data kost tersedia."));
                   }
 
-                  return ListView.builder(
-                    padding: const EdgeInsets.only(
-                      left: 24.0, 
-                      right: 24.0, 
-                      bottom: 100.0, 
-                    ),
-                    itemCount: kostList.length,
-                    itemBuilder: (context, index) {
-                      final kost = kostList[index];
-                      return _buildKostCard(kost); 
+                  return RefreshIndicator(
+                    color: primaryGreen, // Warna animasi loading putar
+                    onRefresh: () async {
+                      // Fungsi yang dipanggil saat user menarik layar ke bawah
+                      await _controller.fetchKosts();
                     },
+                    child: ListView.builder(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.only(
+                        left: 24.0, 
+                        right: 24.0, 
+                        bottom: 100.0, 
+                      ),
+                      itemCount: kostList.length,
+                      itemBuilder: (context, index) {
+                        final kost = kostList[index];
+                        return _buildKostCard(kost); 
+                      },
+                    ),
                   );
                 },
               );
@@ -359,6 +367,11 @@ class _DashboardPageState extends State<DashboardPage> {
         setState(() {
           _selectedIndex = index;
         });
+
+        // Jika user menekan ikon Beranda (Index 0), otomatis tarik data terbaru!
+        if (index == 0) {
+          _controller.fetchKosts();
+        }
       },
       child: Container(
         padding: const EdgeInsets.all(8),
