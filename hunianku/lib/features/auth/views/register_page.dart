@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../controllers/auth_controller.dart';
+import 'package:hunianku/features/auth/controllers/auth_controller.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -121,20 +121,18 @@ class _RegisterPageState extends State<RegisterPage> {
                                       ),
                                     ) 
                                   : ElevatedButton(
-                                      // UBAH DISINI: Tambahkan async
+                                      // PERUBAHAN ADA DI BAGIAN INI
                                       onPressed: () async {
                                         if (_selectedRole == null) {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(
-                                              content: const Text('Silakan pilih Pemilik Kost atau Penghuni Kost terlebih dahulu!'),
-                                              backgroundColor: activeRoleColor,
-                                              behavior: SnackBarBehavior.floating,
-                                            ),
+                                          _controller.showMessage(
+                                            context, 
+                                            'Silakan pilih Pemilik Kost atau Penghuni Kost terlebih dahulu!', 
+                                            isError: true
                                           );
                                           return; 
                                         }
 
-                                        // Tunggu proses register selesai
+                                        // Tunggu proses register selesai, Controller akan urus navigasinya
                                         await _controller.register(
                                           context,
                                           _namaController.text.trim(),
@@ -142,21 +140,6 @@ class _RegisterPageState extends State<RegisterPage> {
                                           _passwordController.text.trim(),
                                           _selectedRole!, 
                                         );
-
-                                        // Pastikan widget masih ada di layar sebelum memanggil Navigator
-                                        if (context.mounted) {
-                                          // Tampilkan pesan sukses (opsional)
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            const SnackBar(
-                                              content: Text('Pendaftaran berhasil! Silakan masuk.'),
-                                              backgroundColor: Colors.green,
-                                              behavior: SnackBarBehavior.floating,
-                                            ),
-                                          );
-                                          
-                                          // Kembali ke halaman Login
-                                          Navigator.pop(context);
-                                        }
                                       },
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: primaryGreen,

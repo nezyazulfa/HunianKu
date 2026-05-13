@@ -16,28 +16,39 @@ class AuthController {
     String password,
   ) async {
     if (email.isEmpty || password.isEmpty) {
-      _showMessage(context, "Email dan password tidak boleh kosong!");
+      showMessage(context, "Email dan password tidak boleh kosong!", isError: true);
       return;
     }
 
     isLoading.value = true;
 
-    final result = await _authService.login(email: email, password: password);
+    try {
+      final result = await _authService.login(email: email, password: password);
+      isLoading.value = false;
 
-    isLoading.value = false;
+      if (!context.mounted) return;
 
-    if (result['success']) {
-      await SessionService.saveSession(result['user']);
-      _showMessage(
+      if (result['success']) {
+        await SessionService.saveSession(result['user']);
+        showMessage(
+          context,
+          "Login Berhasil! Selamat datang ${result['user'].nama}",
+        );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const DashboardPage()),
+        );
+      } else {
+        showMessage(context, result['message'], isError: true);
+      }
+    } catch (e) {
+      isLoading.value = false;
+      if (!context.mounted) return;
+      showMessage(
         context,
-        "Login Berhasil! Selamat datang ${result['user'].nama}",
+        "Gagal terhubung. Pastikan Anda tidak berada di area blank spot.",
+        isError: true,
       );
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const DashboardPage()),
-      );
-    } else {
-      _showMessage(context, result['message'], isError: true);
     }
   }
 
@@ -49,53 +60,85 @@ class AuthController {
     String role,
   ) async {
     if (nama.isEmpty || email.isEmpty || password.isEmpty || role.isEmpty) {
-      _showMessage(context, "Semua kolom wajib diisi!");
+      showMessage(context, "Semua kolom wajib diisi!", isError: true);
       return;
     }
 
     isLoading.value = true;
 
-    final result = await _authService.register(
-      nama: nama,
-      email: email,
-      password: password,
-      role: role,
-    );
+    try {
+      final result = await _authService.register(
+        nama: nama,
+        email: email,
+        password: password,
+        role: role,
+      );
 
-    isLoading.value = false;
+      isLoading.value = false;
+      if (!context.mounted) return;
 
-    if (result['success']) {
-      _showMessage(context, "Registrasi Berhasil!");
-      // TODO: Navigasi ke halaman utama
-    } else {
-      _showMessage(context, result['message'], isError: true);
+      if (result['success']) {
+        if (result['user'] != null) {
+          await SessionService.saveSession(result['user']);
+        }
+
+        showMessage(context, "Registrasi Berhasil!");
+
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const DashboardPage()),
+          (route) => false,
+        );
+      } else {
+        showMessage(context, result['message'], isError: true);
+      }
+    } catch (e) {
+      isLoading.value = false;
+      if (!context.mounted) return;
+      showMessage(
+        context,
+        "Registrasi gagal. Periksa kembali koneksi internet Anda.",
+        isError: true,
+      );
     }
   }
 
   Future<void> loginWithGoogle(BuildContext context) async {
     isLoading.value = true;
 
-    final result = await _authService.loginWithGoogle();
+    try {
+      final result = await _authService.loginWithGoogle();
 
-    isLoading.value = false;
+      isLoading.value = false;
+      if (!context.mounted) return;
 
-    if (result['success']) {
-      await SessionService.saveSession(result['user']);
-      _showMessage(
-        context,
-        "Login Google Berhasil! Hai ${result['user'].nama}",
-      );
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const DashboardPage()),
-      );
-    } else if (result['needs_role'] == true) {
-      // KONDISI 2: PENGGUNA BARU (Minta Role Dulu)
-      _showRoleSelectionDialog(context, result['email'], result['nama']);
-    } else {
-      if (result['message'] != 'Login Google dibatalkan') {
-        _showMessage(context, result['message'], isError: true);
+      if (result['success']) {
+        await SessionService.saveSession(result['user']);
+        showMessage(
+          context,
+          "Login Google Berhasil! Hai ${result['user'].nama}",
+        );
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const DashboardPage()),
+          (route) => false,
+        );
+      } else if (result['needs_role'] == true) {
+        // KONDISI 2: PENGGUNA BARU (Minta Role Dulu)
+        _showRoleSelectionDialog(context, result['email'], result['nama']);
+      } else {
+        if (result['message'] != 'Login Google dibatalkan') {
+          showMessage(context, result['message'], isError: true);
+        }
       }
+    } catch (e) {
+      isLoading.value = false;
+      if (!context.mounted) return;
+      showMessage(
+        context,
+        "Gagal masuk dengan Google akibat gangguan jaringan.",
+        isError: true,
+      );
     }
   }
 
@@ -103,28 +146,26 @@ class AuthController {
     isLoading.value = true;
 
     try {
-      // 1. Hapus token/cache dari database lokal (termasuk Google Sign Out)
+      // 1. Hapus token/cache dari database lokal
       await _authService.logout();
-
       // 2. Bersihkan data user dari Session
-      await SessionService.clearSession(); // Pastikan fungsi clearSession() sudah ada di SessionService ya!
+      await SessionService.clearSession(); 
 
       isLoading.value = false;
 
-      // 3. Arahkan kembali ke halaman Login dan hapus semua riwayat halaman (Biar tidak bisa di-Back)
+      // 3. Arahkan kembali ke halaman Login
       if (context.mounted) {
-        _showMessage(context, "Anda berhasil keluar.");
+        showMessage(context, "Anda berhasil keluar.");
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => const LoginPage()),
-          (Route<dynamic> route) =>
-              false, // false artinya buang semua route sebelumnya
+          (Route<dynamic> route) => false, 
         );
       }
     } catch (e) {
       isLoading.value = false;
       if (context.mounted) {
-        _showMessage(context, "Gagal keluar: $e", isError: true);
+        showMessage(context, "Gagal keluar, periksa koneksi Anda.", isError: true);
       }
     }
   }
@@ -136,7 +177,7 @@ class AuthController {
   ) {
     showDialog(
       context: context,
-      barrierDismissible: false, // Tidak bisa ditutup dengan mengetuk luar area
+      barrierDismissible: false,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
           title: const Text('Pilih Peran Anda'),
@@ -170,7 +211,6 @@ class AuthController {
     );
   }
 
-  // Fungsi baru untuk mengirim data Role yang dipilih ke Service
   Future<void> _finishGoogleRegistration(
     BuildContext context,
     BuildContext dialogContext,
@@ -181,39 +221,100 @@ class AuthController {
     Navigator.of(dialogContext).pop(); // Tutup dialognya
 
     isLoading.value = true;
-    final result = await _authService.completeGoogleRegistration(
-      email: email,
-      nama: nama,
-      role: role,
-    );
-    isLoading.value = false;
-
-    if (result['success']) {
-      await SessionService.saveSession(result['user']);
-      _showMessage(
-        context,
-        "Registrasi Google Berhasil! Hai ${result['user'].nama}",
+    try {
+      final result = await _authService.completeGoogleRegistration(
+        email: email,
+        nama: nama,
+        role: role,
       );
+      isLoading.value = false;
 
-      Navigator.pushReplacement(
+      if (!context.mounted) return;
+
+      if (result['success']) {
+        await SessionService.saveSession(result['user']);
+        showMessage(
+          context,
+          "Registrasi Google Berhasil! Hai ${result['user'].nama}",
+        );
+
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const DashboardPage()),
+          (route) => false,
+        );
+      } else {
+        showMessage(context, result['message'], isError: true);
+      }
+    } catch (e) {
+      isLoading.value = false;
+      if (!context.mounted) return;
+      showMessage(
         context,
-        MaterialPageRoute(builder: (context) => const DashboardPage()),
+        "Gagal menyimpan data peran. Sinyal mungkin terputus.",
+        isError: true,
       );
-    } else {
-      _showMessage(context, result['message'], isError: true);
     }
   }
 
-  void _showMessage(
+  void showMessage(
     BuildContext context,
     String message, {
     bool isError = false,
   }) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isError ? Colors.red : Colors.green,
+    String displayMessage = message;
+    if (message.contains('PlatformException') || message.contains('network_error')) {
+      displayMessage = "Gagal terhubung. Pastikan internet Anda stabil.";
+    }
+
+    // Mengambil overlay dari layar saat ini
+    final overlay = Overlay.of(context);
+    
+    // Membuat widget melayang (OverlayEntry)
+    late OverlayEntry overlayEntry;
+    
+    overlayEntry = OverlayEntry(
+      builder: (context) => Positioned(
+        // Posisikan di atas, ditambah jarak aman dari status bar (poni HP)
+        top: MediaQuery.of(context).padding.top + 20,
+        left: 20,
+        right: 20,
+        child: Material(
+          color: Colors.transparent, // Material transparan agar tidak ada background aneh
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            decoration: BoxDecoration(
+              color: Colors.white, // Latar putih sesuai request
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Text(
+              displayMessage,
+              style: TextStyle(
+                color: isError ? Colors.red : Colors.green,
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
       ),
     );
+
+    overlay.insert(overlayEntry);
+
+    // Hapus pesan setelah 3 detik
+    Future.delayed(const Duration(seconds: 3), () {
+      if (overlayEntry.mounted) {
+        overlayEntry.remove();
+      }
+    });
   }
 }

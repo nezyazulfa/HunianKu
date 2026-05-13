@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../controllers/auth_controller.dart';
-import 'register_page.dart';
+import 'package:hunianku/features/auth/controllers/auth_controller.dart';
+import 'package:hunianku/features/auth/views/register_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
