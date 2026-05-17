@@ -55,7 +55,7 @@ class _ReviewKostPageState extends State<ReviewKostPage> {
           ),
           child: Column(
             children: [
-              // --- HEADER ---
+              // HEADER
               Padding(
                 padding: const EdgeInsets.only(top: 16, left: 8, right: 8),
                 child: Row(
@@ -81,7 +81,7 @@ class _ReviewKostPageState extends State<ReviewKostPage> {
               ),
               const SizedBox(height: 16),
 
-              // --- LIST ULASAN ---
+              // LIST ULASAN
               Expanded(
                 child: ValueListenableBuilder<bool>(
                   valueListenable: _controller.isLoading,
@@ -114,11 +114,11 @@ class _ReviewKostPageState extends State<ReviewKostPage> {
           ),
         ),
       ),
-      // --- PERBAIKAN: FLOATING ACTION BUTTON YANG LEBIH INTERAKTIF ---
+      // FLOATING ACTION BUTTON YANG LEBIH INTERAKTIF
       floatingActionButton: _userRole == 'penghuni' 
           ? FloatingActionButton(
               onPressed: () {
-                // --- MEMUNCULKAN POPUP KONFIRMASI ---
+                // MEMUNCULKAN POPUP KONFIRMASI
                 showDialog(
                   context: context,
                   builder: (BuildContext context) {
@@ -137,20 +137,25 @@ class _ReviewKostPageState extends State<ReviewKostPage> {
                       ),
                       actions: [
                         TextButton(
-                          onPressed: () => Navigator.pop(context), // Tutup dialog jika batal
+                          onPressed: () => Navigator.pop(context),
                           child: const Text('Bukan', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
                         ),
                         ElevatedButton(
                           onPressed: () {
-                            Navigator.pop(context); // Tutup dialog konfirmasi terlebih dahulu
+                            Navigator.pop(context); 
                             
-                            // Lanjut navigasi ke halaman form
+                            // Lanjut navigasi dan TUNGGU hasilnya (menggunakan .then)
                             Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (context) => TambahReviewPage(kost: widget.kost),
                               ),
-                            );
+                            ).then((isSuccess) {
+                              // Jika sukses (kembalian bernilai true), refresh data ulasannya!
+                              if (isSuccess == true) {
+                                _controller.fetchReviews(widget.kost.idkost);
+                              }
+                            });
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: primaryGreen,

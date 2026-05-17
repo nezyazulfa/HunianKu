@@ -19,4 +19,14 @@ class ReviewService {
       throw Exception('Gagal mengambil data review: $e');
     }
   }
+
+  // Menyimpan ulasan baru ke MongoDB
+  Future<void> addReviewRemote(ReviewModel newReview) async {
+    try {
+      final collection = await _mongo.getCollection(_collectionName);
+      await collection.insertOne(newReview.toMap());
+    } catch (e) {
+      throw Exception('Gagal menyimpan ulasan ke server: $e');
+    }
+  }
 }

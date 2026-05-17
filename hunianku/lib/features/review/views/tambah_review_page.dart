@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hunianku/features/dashboard/model/kost_model.dart';
+import 'package:hunianku/features/review/controllers/review_controller.dart';
 
 class TambahReviewPage extends StatefulWidget {
   final KostModel kost;
@@ -11,9 +12,10 @@ class TambahReviewPage extends StatefulWidget {
 }
 
 class _TambahReviewPageState extends State<TambahReviewPage> {
+  final ReviewController _controller = ReviewController();
   final TextEditingController _reviewController = TextEditingController();
-  int _selectedRating = 5; // Default bintang 5
-
+  int _selectedRating = 5; 
+  
   final Color backgroundColor = const Color(0xFFEFEBE1); 
   final Color containerColor = const Color(0xFFFBFBF9); 
   final Color cardColor = Colors.white; 
@@ -30,6 +32,7 @@ class _TambahReviewPageState extends State<TambahReviewPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: backgroundColor,
+      resizeToAvoidBottomInset: true,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -138,26 +141,36 @@ class _TambahReviewPageState extends State<TambahReviewPage> {
                     // --- TOMBOL KIRIM ---
                     Padding(
                       padding: const EdgeInsets.only(bottom: 40.0, top: 8.0), 
-                      child: ElevatedButton(
-                        onPressed: () {
-                          // TODO: Sambungkan logika kirim review ke Controller MongoDB
-                          // Contoh: _reviewController.addReview(widget.kost.idkost, _selectedRating, _reviewController.text);
-
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Terima kasih! Ulasan berhasil dikirim.')),
+                      child: ValueListenableBuilder<bool>(
+                        valueListenable: _controller.isLoading,
+                        builder: (context, isLoading, child) {
+                          return ElevatedButton(
+                            // Matikan tombol jika sedang loading
+                            onPressed: isLoading ? null : () {
+                              _controller.tambahReview(
+                                context, 
+                                widget.kost, 
+                                _selectedRating, 
+                                _reviewController.text.trim()
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: primaryGreen,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 80, vertical: 14),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              elevation: 0,
+                            ),
+                            child: isLoading
+                                ? const SizedBox(
+                                    width: 20, height: 20,
+                                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                  )
+                                : const Text('Kirim Ulasan', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                           );
-                          Navigator.pop(context); // Kembali ke list ulasan
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: primaryGreen,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 80, vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                          elevation: 0,
-                        ),
-                        child: const Text('Kirim Ulasan', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        }
                       ),
-                    ),
+                    ),  
                   ],
                 ),
               ),
