@@ -1,26 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:hunianku/features/dashboard/model/kost_model.dart';
+import 'package:hunianku/features/bookmark/model/bookmark_model.dart';
 import 'package:hunianku/features/dashboard/views/detail_kost_page.dart';
+import 'package:hunianku/features/bookmark/controllers/bookmark_controller.dart'; 
 
-class BookmarkPage extends StatelessWidget {
+class BookmarkPage extends StatefulWidget {
   const BookmarkPage({super.key});
+
+  @override
+  State<BookmarkPage> createState() => _BookmarkPageState();
+}
+
+class _BookmarkPageState extends State<BookmarkPage> {
+  // Gunakan Singleton Controller
+  final BookmarkController _controller = BookmarkController();
 
   final Color containerColor = const Color(0xFFFBFBF9); 
   final Color cardColor = Colors.white; 
   final Color primaryGreen = const Color(0xFF4A6525);
   final Color buttonRed = const Color(0xFF6B1212);
 
-  // TODO: Nanti ganti dengan data KostModel dari database yang sudah difilter by Bookmark
-  final List<KostModel> dummyBookmarks = const [
-    
-  ];
+  @override
+  void initState() {
+    super.initState();
+    // Ambil data bookmark dari server saat halaman ini dibuka
+    _controller.fetchBookmarks();
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Tanpa Scaffold karena ditempel di Dashboard
     return Column(
       children: [
-        // --- HEADER JUDUL (Font disamakan dengan Tambah Notes) ---
         const Padding(
           padding: EdgeInsets.symmetric(vertical: 24),
           child: Text(
@@ -33,7 +43,6 @@ class BookmarkPage extends StatelessWidget {
           ),
         ),
 
-        // --- KONTEN UTAMA ---
         Expanded(
           child: Container(
             width: double.infinity,
@@ -44,18 +53,36 @@ class BookmarkPage extends StatelessWidget {
                 topRight: Radius.circular(32),
               ),
             ),
-            child: ListView.builder(
-              padding: const EdgeInsets.only(
-                top: 32.0,
-                left: 24.0, 
-                right: 24.0, 
-                bottom: 100.0, // Jarak Navbar
-              ),
-              itemCount: dummyBookmarks.length,
-              itemBuilder: (context, index) {
-                final kost = dummyBookmarks[index];
-                return _buildBookmarkCard(context, kost);
-              },
+            child: ValueListenableBuilder<bool>(
+              valueListenable: _controller.isLoading,
+              builder: (context, isLoading, child) {
+                if (isLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                return ValueListenableBuilder<List<BookmarkModel>>(
+                  valueListenable: _controller.bookmarks,
+                  builder: (context, bookmarkList, child) {
+                    if (bookmarkList.isEmpty) {
+                      return const Center(child: Text("Belum ada kost yang ditandai.", style: TextStyle(color: Colors.grey)));
+                    }
+
+                    // Tampilkan List
+                    return ListView.builder(
+                      padding: const EdgeInsets.only(
+                        top: 32.0, left: 24.0, right: 24.0, bottom: 100.0, 
+                      ),
+                      itemCount: bookmarkList.length,
+                      itemBuilder: (context, index) {
+                        // Ambil kost dari dalam objek BookmarkModel
+                        final kost = bookmarkList[index].kost;
+                        if (kost == null) return const SizedBox(); 
+                        return _buildBookmarkCard(context, kost);
+                      },
+                    );
+                  }
+                );
+              }
             ),
           ),
         ),
@@ -81,7 +108,6 @@ class BookmarkPage extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Gambar Kost
           Container(
             width: 110,
             height: 130,
@@ -93,7 +119,6 @@ class BookmarkPage extends StatelessWidget {
           ),
           const SizedBox(width: 16),
           
-          // Detail & Tombol
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -113,7 +138,7 @@ class BookmarkPage extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEFEBE1), // Krem background
+                    color: const Color(0xFFEFEBE1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -128,13 +153,13 @@ class BookmarkPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 
-                // Row Tombol Hapus & Lihat Detail
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
+                    // --- TOMBOL HAPUS DARI BOOKMARK ---
                     IconButton(
                       onPressed: () {
-                        // TODO: Logika Hapus Bookmark
+                        _showDeleteBookmarkDialog(context, kost.idkost);
                       },
                       icon: Icon(Icons.delete, color: buttonRed, size: 24),
                       constraints: const BoxConstraints(),
@@ -154,9 +179,7 @@ class BookmarkPage extends StatelessWidget {
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
                         minimumSize: const Size(0, 28),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         elevation: 0,
                       ),
                       child: const Text('Lihat Detail', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
@@ -168,6 +191,50 @@ class BookmarkPage extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  // --- FUNGSI POP-UP HAPUS BOOKMARK ---
+  void _showDeleteBookmarkDialog(BuildContext context, String idkost) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          title: const Column(
+            children: [
+              Icon(Icons.bookmark_remove_rounded, color: Colors.orange, size: 60),
+              SizedBox(height: 16),
+              Text(
+                "Hapus Bookmark?",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          content: const Text(
+            "Apakah Anda yakin ingin menghapus kost ini dari daftar bookmark?",
+            textAlign: TextAlign.center,
+          ),
+          actionsAlignment: MainAxisAlignment.spaceEvenly,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text("Batal", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+                _controller.removeBookmarkByKostId(context, idkost);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: buttonRed,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text("Ya, Hapus", style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        );
+      },
     );
   }
 }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hunianku/features/dashboard/model/kost_model.dart';
+import 'package:hunianku/features/bookmark/controllers/bookmark_controller.dart'; 
+import 'package:hunianku/services/session_service.dart';
 
 class DetailKostPage extends StatefulWidget {
   final KostModel kost;
@@ -10,11 +12,29 @@ class DetailKostPage extends StatefulWidget {
 }
 
 class _DetailKostPageState extends State<DetailKostPage> {
-  // Variabel untuk menyimpan status apakah kost ini di-bookmark atau tidak
+  // Panggil Singleton Controller (Agar datanya sinkron dengan halaman Bookmark)
+  final BookmarkController _bookmarkController = BookmarkController();
+  
   bool isBookmarked = false;
+  String _userRole = '';
 
-  final Color backgroundColor = const Color(0xFFEFEBE1); // Warna krem background atas
+  final Color backgroundColor = const Color(0xFFEFEBE1); 
   final Color cardColor = const Color(0x80FBFBF9); 
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserRole();
+    // Mengecek apakah kost ini ada di dalam daftar bookmark saat halaman dibuka
+    isBookmarked = _bookmarkController.isKostBookmarked(widget.kost.idkost);
+  }
+
+  Future<void> _loadUserRole() async {
+    final role = await SessionService.getRole() ?? 'penghuni';
+    setState(() {
+      _userRole = role;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +54,7 @@ class _DetailKostPageState extends State<DetailKostPage> {
           ),
           child: Column(
             children: [
-              // --- HEADER (Tombol Back, Judul, & Tombol Bintang) ---
+              // --- HEADER ---
               Padding(
                 padding: const EdgeInsets.only(top: 16, left: 8, right: 8),
                 child: Row(
@@ -54,46 +74,54 @@ class _DetailKostPageState extends State<DetailKostPage> {
                         ),
                       ),
                     ),
-                    // --- TOMBOL BOOKMARK BINTANG DI KANAN ATAS ---
-                    IconButton(
-                      icon: Icon(
-                        isBookmarked ? Icons.star : Icons.star_border,
-                        color: const Color(0xFFEBC144), // Kuning mustard
-                        size: 28,
+                    // --- TOMBOL BOOKMARK BINTANG ---
+                    if (_userRole == 'penghuni')
+                      ValueListenableBuilder<bool>(
+                        valueListenable: _bookmarkController.isLoading,
+                        builder: (context, isLoading, child) {
+                          return IconButton(
+                            icon: isLoading 
+                              ? const SizedBox(
+                                  width: 24, height: 24, 
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFEBC144))
+                                )
+                              : Icon(
+                                  isBookmarked ? Icons.star : Icons.star_border,
+                                  color: const Color(0xFFEBC144), 
+                                  size: 28,
+                                ),
+                            onPressed: isLoading ? null : () async {
+                              // Panggil Controller untuk eksekusi ke MongoDB
+                              if (isBookmarked) {
+                                await _bookmarkController.removeBookmarkByKostId(context, widget.kost.idkost);
+                              } else {
+                                await _bookmarkController.addBookmark(context, widget.kost);
+                              }
+                              
+                              // Perbarui status bintang di layar
+                              setState(() {
+                                isBookmarked = _bookmarkController.isKostBookmarked(widget.kost.idkost);
+                              });
+                            },
+                          );
+                        }
                       ),
-                      onPressed: () {
-                        setState(() {
-                          isBookmarked = !isBookmarked; // Toggle status bookmark
-                        });
-                        
-                        // Menampilkan notifikasi kecil di bawah
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              isBookmarked 
-                                ? 'Ditambahkan ke Bookmark' 
-                                : 'Dihapus dari Bookmark'
-                            ),
-                            duration: const Duration(seconds: 1),
-                          ),
-                        );
 
-                        // TODO: Panggil fungsi Controller di sini untuk menyimpan/menghapus bookmark di Database MongoDB
-                      },
-                    ),
+                    // --- SPACER KOSONG JIKA PEMILIK (AGAR JUDUL TETAP DI TENGAH) ---
+                    if (_userRole == 'pemilik')
+                      const SizedBox(width: 48),
                   ],
                 ),
               ),
               const SizedBox(height: 16),
 
-              // --- KONTEN BISA DI-SCROLL ---
+              // --- KONTEN DETAIL KOST ---
               Expanded(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Gambar Kost
                       Center(
                         child: Container(
                           width: 220, 
@@ -144,20 +172,12 @@ class _DetailKostPageState extends State<DetailKostPage> {
       children: [
         Text(
           title,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-          ),
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87),
         ),
         const SizedBox(height: 4),
         Text(
           content,
-          style: const TextStyle(
-            fontSize: 14,
-            color: Colors.black87,
-            height: 1.4, 
-          ),
+          style: const TextStyle(fontSize: 14, color: Colors.black87, height: 1.4),
         ),
       ],
     );
