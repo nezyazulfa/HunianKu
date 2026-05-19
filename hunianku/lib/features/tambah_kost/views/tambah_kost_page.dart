@@ -81,13 +81,16 @@ class _AddKostPageState extends State<AddKostPage> {
     });
   }
 
-  // --- FUNGSI UNTUK MEMUNCULKAN DIALOG FILTER PCD ---
+  // --- FUNGSI UNTUK MEMUNCULKAN DIALOG FILTER 4 KEKUATAN PCD ---
   Future<void> _showFilterDialog(int index) async {
     File selectedFile = _imageFiles[index];
     
-    // State untuk kontrol UI di dalam dialog
-    String selectedFilter = 'Brightness'; // Default yang terpilih
-    double brightnessLevel = 0.0; 
+    // State Kontrol Slider
+    String selectedFilter = 'AutoFix'; 
+    double brightnessLevel = 0.0; // Untuk Brightness (-255 s.d 255)
+    double sharpenLevel = 1.0;    // Untuk High-pass (0.0 s.d 5.0)
+    double denoiseRadius = 1.0;   // Untuk Median (1 s.d 3)
+    
     bool isProcessing = false;
 
     await showDialog(
@@ -98,92 +101,110 @@ class _AddKostPageState extends State<AddKostPage> {
           builder: (context, setDialogState) {
             return AlertDialog(
               backgroundColor: Colors.white,
-              title: const Text('Filter Gambar (PCD)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // --- PILIHAN FILTER MENGGUNAKAN WRAP ---
-                  Wrap(
-                    spacing: 8, 
-                    runSpacing: 8,
-                    alignment: WrapAlignment.center,
-                    children: [
-                      ChoiceChip(
-                        label: const Text('Kecerahan', style: TextStyle(fontSize: 12)),
-                        selected: selectedFilter == 'Brightness',
-                        selectedColor: primaryGreen.withOpacity(0.2),
-                        onSelected: (selected) {
-                          if (selected) setDialogState(() => selectedFilter = 'Brightness');
-                        },
-                      ),
-                      ChoiceChip(
-                        label: const Text('Penajaman', style: TextStyle(fontSize: 12)),
-                        selected: selectedFilter == 'Sharpen',
-                        selectedColor: primaryGreen.withOpacity(0.2),
-                        onSelected: (selected) {
-                          if (selected) setDialogState(() => selectedFilter = 'Sharpen');
-                        },
-                      ),
-                      ChoiceChip(
-                        label: const Text('Ekualisasi', style: TextStyle(fontSize: 12)),
-                        selected: selectedFilter == 'Equalization',
-                        selectedColor: primaryGreen.withOpacity(0.2),
-                        onSelected: (selected) {
-                          if (selected) setDialogState(() => selectedFilter = 'Equalization');
-                        },
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
+              title: const Text('Edit Foto Kost', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              content: SizedBox(
+                width: double.maxFinite,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // --- 4 PILIHAN FILTER UTAMA ---
+                    Wrap(
+                      spacing: 8, 
+                      runSpacing: 8,
+                      alignment: WrapAlignment.center,
+                      children: [
+                        ChoiceChip(
+                          label: const Text('✨ Auto-Fix', style: TextStyle(fontSize: 12)),
+                          selected: selectedFilter == 'AutoFix',
+                          selectedColor: primaryGreen.withOpacity(0.2),
+                          onSelected: (val) { if (val) setDialogState(() => selectedFilter = 'AutoFix'); },
+                        ),
+                        ChoiceChip(
+                          label: const Text('☀️ Kecerahan', style: TextStyle(fontSize: 12)),
+                          selected: selectedFilter == 'Brightness',
+                          selectedColor: primaryGreen.withOpacity(0.2),
+                          onSelected: (val) { if (val) setDialogState(() => selectedFilter = 'Brightness'); },
+                        ),
+                        ChoiceChip(
+                          label: const Text('🔍 Pertajam', style: TextStyle(fontSize: 12)),
+                          selected: selectedFilter == 'Sharpen',
+                          selectedColor: primaryGreen.withOpacity(0.2),
+                          onSelected: (val) { if (val) setDialogState(() => selectedFilter = 'Sharpen'); },
+                        ),
+                        ChoiceChip(
+                          label: const Text('🧹 Denoise', style: TextStyle(fontSize: 12)),
+                          selected: selectedFilter == 'Denoise',
+                          selectedColor: primaryGreen.withOpacity(0.2),
+                          onSelected: (val) { if (val) setDialogState(() => selectedFilter = 'Denoise'); },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
 
-                  // --- AREA PREVIEW ---
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: SizedBox(
-                      height: 200,
-                      width: double.infinity,
-                      child: isProcessing
-                          ? const Center(child: CircularProgressIndicator())
-                          : (selectedFilter == 'Brightness')
-                              // Jika Kecerahan -> Preview Realtime
-                              ? ColorFiltered(
-                                  colorFilter: ColorFilter.matrix([
-                                    1, 0, 0, 0, brightnessLevel,
-                                    0, 1, 0, 0, brightnessLevel,
-                                    0, 0, 1, 0, brightnessLevel,
-                                    0, 0, 0, 1, 0,
-                                  ]),
-                                  child: Image.file(selectedFile, fit: BoxFit.cover),
-                                )
-                              // Jika filter lain -> Tampilkan gambar asli (hasil terlihat setelah proses)
-                              : Image.file(selectedFile, fit: BoxFit.cover),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  // --- AREA KONTROL TAMBAHAN ---
-                  if (selectedFilter == 'Brightness') ...[
-                    Text('Intensitas: ${brightnessLevel.toInt()}'),
-                    Slider(
-                      value: brightnessLevel,
-                      min: -255.0,
-                      max: 255.0,
-                      activeColor: primaryGreen,
-                      onChanged: isProcessing
-                          ? null
-                          : (value) => setDialogState(() => brightnessLevel = value),
-                    ),
-                  ] else ...[
-                    const Padding(
-                      padding: EdgeInsets.only(top: 8.0),
-                      child: Text(
-                        'Proses komputasi matriks akan dijalankan. Hasil akan terlihat setelah diterapkan.',
-                        style: TextStyle(fontSize: 12, color: Colors.black54, fontStyle: FontStyle.italic),
-                        textAlign: TextAlign.center,
+                    // --- AREA PREVIEW GAMBAR ---
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: SizedBox(
+                        height: 200,
+                        width: double.infinity,
+                        child: isProcessing
+                            ? Center(child: CircularProgressIndicator(color: primaryGreen))
+                            : (selectedFilter == 'Brightness')
+                                ? ColorFiltered(
+                                    colorFilter: ColorFilter.matrix([
+                                      1, 0, 0, 0, brightnessLevel,
+                                      0, 1, 0, 0, brightnessLevel,
+                                      0, 0, 1, 0, brightnessLevel,
+                                      0, 0, 0, 1, 0,
+                                    ]),
+                                    child: Image.file(selectedFile, fit: BoxFit.cover),
+                                  )
+                                : Image.file(selectedFile, fit: BoxFit.cover),
                       ),
                     ),
-                  ]
-                ],
+                    const SizedBox(height: 16),
+                    
+                    // --- AREA RENDER SLIDER (BERUBAH SESUAI TAB) ---
+                    if (selectedFilter == 'AutoFix') ...[
+                      const Padding(
+                        padding: EdgeInsets.only(top: 8.0),
+                        child: Text(
+                          'Histogram Equalization akan menyeimbangkan kontras secara otomatis hanya dengan 1-klik.',
+                          style: TextStyle(fontSize: 12, color: Colors.black54),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ] else if (selectedFilter == 'Brightness') ...[
+                      Text('Intensitas Kecerahan: ${brightnessLevel.toInt()}'),
+                      Slider(
+                        value: brightnessLevel,
+                        min: -255.0, max: 255.0,
+                        activeColor: primaryGreen,
+                        onChanged: isProcessing ? null : (v) => setDialogState(() => brightnessLevel = v),
+                      ),
+                    ] else if (selectedFilter == 'Sharpen') ...[
+                      Text('Kekuatan Edge: ${sharpenLevel.toStringAsFixed(1)}'),
+                      Slider(
+                        value: sharpenLevel,
+                        min: 0.1, max: 5.0, divisions: 49,
+                        activeColor: primaryGreen,
+                        onChanged: isProcessing ? null : (v) => setDialogState(() => sharpenLevel = v),
+                      ),
+                    ] else if (selectedFilter == 'Denoise') ...[
+                      Text('Tingkat Kehalusan: ${denoiseRadius.toInt()}'),
+                      Slider(
+                        value: denoiseRadius,
+                        min: 1.0, max: 3.0, divisions: 2,
+                        activeColor: primaryGreen,
+                        onChanged: isProcessing ? null : (v) => setDialogState(() => denoiseRadius = v),
+                      ),
+                      const Text(
+                        '(Peringatan: Tingkat 3 memakan waktu lebih lama)',
+                        style: TextStyle(fontSize: 10, color: Colors.redAccent),
+                      ),
+                    ]
+                  ],
+                ),
               ),
               actions: [
                 TextButton(
@@ -201,10 +222,10 @@ class _AddKostPageState extends State<AddKostPage> {
                             final bytes = await selectedFile.readAsBytes();
                             Uint8List processedBytes;
 
-                            // ----------------------------------------------------
-                            // PERCABANGAN EKSEKUSI PCD DI ISOLATE (BACKGROUND)
-                            // ----------------------------------------------------
-                            if (selectedFilter == 'Brightness') {
+                            // ROUTING BACKGROUND ISOLATE PCD
+                            if (selectedFilter == 'AutoFix') {
+                              processedBytes = await compute(applyAutoFix, {'bytes': bytes});
+                            } else if (selectedFilter == 'Brightness') {
                               processedBytes = await compute(applyBrightness, {
                                 'bytes': bytes,
                                 'brightness': brightnessLevel,
@@ -212,24 +233,20 @@ class _AddKostPageState extends State<AddKostPage> {
                             } else if (selectedFilter == 'Sharpen') {
                               processedBytes = await compute(applySharpening, {
                                 'bytes': bytes,
+                                'intensity': sharpenLevel,
                               });
                             } else {
-                              // Filter Equalization
-                              processedBytes = await compute(applyHistogramEqualization, {
+                              processedBytes = await compute(applyMedianFilter, {
                                 'bytes': bytes,
+                                'radius': denoiseRadius.toInt(),
                               });
                             }
 
-                            // Simpan dan timpa file dengan gambar yang sudah difilter
                             await selectedFile.writeAsBytes(processedBytes);
-
-                            // Update UI di halaman utama
-                            setState(() {
-                              _imageFiles[index] = selectedFile; 
-                            });
+                            setState(() { _imageFiles[index] = selectedFile; });
                           } catch (e) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Gagal menerapkan filter: $e')),
+                              SnackBar(content: Text('Gagal: $e')),
                             );
                           }
 
@@ -319,34 +336,21 @@ class _AddKostPageState extends State<AddKostPage> {
                   color: cardColor,
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 15,
-                      offset: const Offset(0, 5),
-                    ),
+                    BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 15, offset: const Offset(0, 5)),
                   ],
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text(
-                      'Tambah Kost',
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Colors.black87),
-                    ),
+                    const Text('Tambah Kost', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Colors.black87)),
                     const SizedBox(height: 8),
-                    const Text(
-                      'Isi detail untuk menambah kost anda',
-                      style: TextStyle(fontSize: 12, color: Colors.black54),
-                      textAlign: TextAlign.center,
-                    ),
+                    const Text('Isi detail untuk menambah kost anda', style: TextStyle(fontSize: 12, color: Colors.black54), textAlign: TextAlign.center),
                     const SizedBox(height: 24),
 
                     // --- AREA UPLOAD GAMBAR ---
                     _buildImageGallery(),
                     
                     const SizedBox(height: 24),
-
-                    // --- FIELD INPUT ---
                     _buildTextField(controller: _namaController, hintText: 'Nama Kost'),
                     const SizedBox(height: 16),
                     _buildTextField(controller: _deskripsiController, hintText: 'Deskripsi'),
@@ -389,18 +393,13 @@ class _AddKostPageState extends State<AddKostPage> {
                     ValueListenableBuilder<bool>(
                       valueListenable: _controller.isLoading,
                       builder: (context, isLoading, child) {
-                        if (isLoading) {
-                          return Center(child: CircularProgressIndicator(color: primaryGreen));
-                        }
+                        if (isLoading) return Center(child: CircularProgressIndicator(color: primaryGreen));
                         return Row(
                           children: [
                             Expanded(
                               child: OutlinedButton(
                                 onPressed: () {
-                                  final kostDraft = _buatObjekKost();
-                                  _controller.simpanKeDraf(context, kostDraft, () {
-                                    _clearAllFields();
-                                  });
+                                  _controller.simpanKeDraf(context, _buatObjekKost(), _clearAllFields);
                                 },
                                 style: OutlinedButton.styleFrom(
                                   side: BorderSide(color: primaryGreen, width: 1.5),
@@ -418,10 +417,7 @@ class _AddKostPageState extends State<AddKostPage> {
                                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Nama Kost wajib diisi!')));
                                     return;
                                   }
-                                  final kostBaru = _buatObjekKost();
-                                  _controller.simpanKost(context, kostBaru, () {
-                                    _clearAllFields();
-                                  });
+                                  _controller.simpanKost(context, _buatObjekKost(), _clearAllFields);
                                 },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: primaryGreen,
@@ -448,18 +444,15 @@ class _AddKostPageState extends State<AddKostPage> {
     );
   }
 
-  // --- WIDGET UI UNTUK MENAMPILKAN BANYAK GAMBAR ---
   Widget _buildImageGallery() {
     if (_imageFiles.isEmpty) {
       return InkWell(
         onTap: _pickFromGallery,
         borderRadius: BorderRadius.circular(16),
         child: Container(
-          height: 160,
-          width: double.infinity,
+          height: 160, width: double.infinity,
           decoration: BoxDecoration(
-            color: Colors.grey[200],
-            borderRadius: BorderRadius.circular(16),
+            color: Colors.grey[200], borderRadius: BorderRadius.circular(16),
             border: Border.all(color: Colors.grey.shade400, width: 1.5),
           ),
           child: Column(
@@ -486,11 +479,9 @@ class _AddKostPageState extends State<AddKostPage> {
             return GestureDetector(
               onTap: _pickFromGallery,
               child: Container(
-                width: 100,
-                margin: const EdgeInsets.only(left: 8),
+                width: 100, margin: const EdgeInsets.only(left: 8),
                 decoration: BoxDecoration(
-                  color: Colors.grey[200],
-                  borderRadius: BorderRadius.circular(12),
+                  color: Colors.grey[200], borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.grey.shade400, width: 1.5, style: BorderStyle.solid),
                 ),
                 child: Column(
@@ -510,29 +501,19 @@ class _AddKostPageState extends State<AddKostPage> {
               GestureDetector(
                 onTap: () => _showFilterDialog(index), 
                 child: Container(
-                  width: 120,
-                  margin: const EdgeInsets.only(right: 12),
+                  width: 120, margin: const EdgeInsets.only(right: 12),
                   clipBehavior: Clip.hardEdge,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      Image.file(
-                        _imageFiles[index],
-                        fit: BoxFit.cover,
-                      ),
+                      Image.file(_imageFiles[index], fit: BoxFit.cover),
                       Positioned(
-                        bottom: 8,
-                        left: 8,
+                        bottom: 8, left: 8,
                         child: Container(
                           padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: Colors.black54,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(Icons.tune, color: Colors.white, size: 16),
+                          decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(8)),
+                          child: const Icon(Icons.auto_fix_high, color: Colors.white, size: 16),
                         ),
                       ),
                     ],
@@ -540,16 +521,12 @@ class _AddKostPageState extends State<AddKostPage> {
                 ),
               ),
               Positioned(
-                top: 4,
-                right: 16,
+                top: 4, right: 16,
                 child: GestureDetector(
                   onTap: () => _removeImage(index),
                   child: Container(
                     padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(
-                      color: Colors.red,
-                      shape: BoxShape.circle,
-                    ),
+                    decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
                     child: const Icon(Icons.close, size: 14, color: Colors.white),
                   ),
                 ),
@@ -562,37 +539,21 @@ class _AddKostPageState extends State<AddKostPage> {
   }
 
   void _clearAllFields() {
-    _namaController.clear();
-    _deskripsiController.clear();
-    _alamatController.clear();
-    _gmapsController.clear();
-    _fasilitasController.clear();
-    _hargaController.clear();
-    _kontakController.clear();
-    setState(() {
-      _imageFiles.clear(); 
-    });
+    _namaController.clear(); _deskripsiController.clear(); _alamatController.clear();
+    _gmapsController.clear(); _fasilitasController.clear(); _hargaController.clear(); _kontakController.clear();
+    setState(() { _imageFiles.clear(); });
   }
 
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String hintText,
-    bool isNumeric = false,
-  }) {
+  Widget _buildTextField({required TextEditingController controller, required String hintText, bool isNumeric = false}) {
     return Container(
-      decoration: BoxDecoration(
-        color: inputBackgroundColor,
-        borderRadius: BorderRadius.circular(16), 
-      ),
+      decoration: BoxDecoration(color: inputBackgroundColor, borderRadius: BorderRadius.circular(16)),
       child: TextField(
         controller: controller,
         keyboardType: isNumeric ? TextInputType.number : TextInputType.text,
         style: const TextStyle(fontSize: 14),
         decoration: InputDecoration(
-          hintText: hintText,
-          hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 13),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          hintText: hintText, hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 13),
+          border: InputBorder.none, contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         ),
       ),
     );
@@ -600,22 +561,16 @@ class _AddKostPageState extends State<AddKostPage> {
 
   Widget _buildSelectionButton(String title, String groupValue, Function(String) onSelect) {
     bool isSelected = title == groupValue;
-
     return Expanded(
       child: GestureDetector(
         onTap: () => onSelect(title),
         child: Container(
-          height: 40,
-          alignment: Alignment.center,
+          height: 40, alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: isSelected ? primaryRed : Colors.white,
-            borderRadius: BorderRadius.circular(20),
+            color: isSelected ? primaryRed : Colors.white, borderRadius: BorderRadius.circular(20),
             border: Border.all(color: primaryRed, width: 1.2),
           ),
-          child: Text(
-            title,
-            style: TextStyle(color: isSelected ? Colors.white : primaryRed, fontWeight: FontWeight.bold, fontSize: 13),
-          ),
+          child: Text(title, style: TextStyle(color: isSelected ? Colors.white : primaryRed, fontWeight: FontWeight.bold, fontSize: 13)),
         ),
       ),
     );
