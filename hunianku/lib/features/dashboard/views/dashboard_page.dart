@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:hunianku/features/auth/views/profil_page.dart';
 import 'package:hunianku/features/review/views/review_kost_page.dart';
 import 'package:hunianku/features/note/views/note_page.dart';
@@ -165,13 +166,16 @@ class _DashboardPageState extends State<DashboardPage> {
                       // Fitur pencarian dari temanmu
                       _controller.searchKost(value);
                     },
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       hintText: 'Cari Kost (Nama / Lokasi / Fasilitas)',
-                      hintStyle: TextStyle(color: Colors.grey, fontSize: 14),
-                      prefixIcon: Icon(Icons.search, color: Colors.black87),
-                      suffixIcon: Icon(Icons.menu, color: Colors.black87),
+                      hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
+                      prefixIcon: const Icon(Icons.search, color: Colors.black87),
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.tune, color: Colors.black87), 
+                        onPressed: () => _showFilterModal(context), // Panggil pop-up
+                      ),
                       border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(vertical: 15),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 15),
                     ),
                   ),
                 ),
@@ -225,6 +229,184 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
+  // MODAL BOTTOM SHEET UNTUK FILTER
+  void _showFilterModal(BuildContext context) {
+    // Controller lokal untuk menampung inputan di dalam modal
+    TextEditingController minPriceCtrl = TextEditingController(text: _controller.minPrice?.toString() ?? '');
+    TextEditingController maxPriceCtrl = TextEditingController(text: _controller.maxPrice?.toString() ?? '');
+    
+    String tempKategori = _controller.selectedKategori;
+    String tempStatus = _controller.selectedStatus;
+    String tempPeriode = _controller.selectedPeriode;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true, 
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(32))),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom, 
+                left: 24, right: 24, top: 24
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Handle Bar
+                    Center(child: Container(width: 40, height: 5, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(10)))),
+                    const SizedBox(height: 20),
+                    
+                    // --- PERBAIKAN: JUDUL DENGAN TOMBOL RESET ---
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Filter Pencarian', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.black87)),
+                        TextButton(
+                          onPressed: () {
+                            // 1. Kosongkan nilai di layar modal
+                            minPriceCtrl.clear();
+                            maxPriceCtrl.clear();
+                            setModalState(() {
+                              tempKategori = 'Semua';
+                              tempStatus = 'Semua';
+                              tempPeriode = 'Per Bulan';
+                            });
+                            // 2. Perintahkan controller mengembalikan data ke semula
+                            _controller.resetFilters();
+                          },
+                          style: TextButton.styleFrom(
+                            padding: EdgeInsets.zero,
+                            minimumSize: const Size(50, 30),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          child: const Text('Reset', style: TextStyle(color: Color(0xFF6B1212), fontWeight: FontWeight.bold)),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+
+                    // --- FILTER HARGA & PERIODE ---
+                    const Text('Rentang Harga', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(child: _buildPriceInput(minPriceCtrl, 'Minimum (Rp)')),
+                        const SizedBox(width: 16),
+                        Expanded(child: _buildPriceInput(maxPriceCtrl, 'Maksimum (Rp)')),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      children: ['Per Bulan', 'Per Semester', 'Per Tahun'].map((periode) {
+                        return ChoiceChip(
+                          label: Text(periode, style: TextStyle(color: tempPeriode == periode ? Colors.white : Colors.black87)),
+                          selected: tempPeriode == periode,
+                          selectedColor: primaryGreen,
+                          backgroundColor: backgroundColor,
+                          onSelected: (bool selected) {
+                            setModalState(() => tempPeriode = periode);
+                          },
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // --- FILTER KATEGORI ---
+                    const Text('Kategori Kost', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      children: ['Semua', 'Putra', 'Putri', 'Putra Putri'].map((kategori) {
+                        return ChoiceChip(
+                          label: Text(kategori, style: TextStyle(color: tempKategori == kategori ? Colors.white : Colors.black87)),
+                          selected: tempKategori == kategori,
+                          selectedColor: primaryGreen,
+                          backgroundColor: backgroundColor,
+                          onSelected: (bool selected) {
+                            setModalState(() => tempKategori = selected ? kategori : 'Semua');
+                          },
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // --- FILTER STATUS ---
+                    const Text('Status Kost', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      children: ['Semua', 'Tersedia', 'Full'].map((status) {
+                        return ChoiceChip(
+                          label: Text(status, style: TextStyle(color: tempStatus == status ? Colors.white : Colors.black87)),
+                          selected: tempStatus == status,
+                          selectedColor: primaryGreen,
+                          backgroundColor: backgroundColor,
+                          onSelected: (bool selected) {
+                            setModalState(() => tempStatus = selected ? status : 'Semua');
+                          },
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 32),
+
+                    // --- TOMBOL TERAPKAN ---
+                    ElevatedButton(
+                      onPressed: () {
+                        int? min = minPriceCtrl.text.isNotEmpty ? int.parse(minPriceCtrl.text) : null;
+                        int? max = maxPriceCtrl.text.isNotEmpty ? int.parse(maxPriceCtrl.text) : null;
+                        
+                        _controller.setFilters(
+                          min: min,
+                          max: max,
+                          kategori: tempKategori,
+                          status: tempStatus,
+                          periode: tempPeriode,
+                        );
+                        Navigator.pop(context); // Tutup modal
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryGreen,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      ),
+                      child: const Text('Terapkan Filter', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    ),
+                    const SizedBox(height: 24), // Spacing ekstra di bawah
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // Widget bantuan untuk input harga di dalam Modal
+  Widget _buildPriceInput(TextEditingController controller, String hint) {
+    return Container(
+      decoration: BoxDecoration(color: backgroundColor, borderRadius: BorderRadius.circular(12)),
+      child: TextField(
+        controller: controller,
+        keyboardType: TextInputType.number,
+        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: const TextStyle(fontSize: 12, color: Colors.grey),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        ),
+      ),
+    );
+  }
+
   Widget _buildKostCard(KostModel kost) {
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
@@ -249,8 +431,16 @@ class _DashboardPageState extends State<DashboardPage> {
             decoration: BoxDecoration(
               color: Colors.grey[300],
               borderRadius: BorderRadius.circular(16),
+              image: kost.daftarFoto.isNotEmpty
+                  ? DecorationImage(
+                      image: NetworkImage(kost.daftarFoto[0]), // Ambil foto urutan pertama
+                      fit: BoxFit.cover, // Biar fotonya memenuhi kotak tanpa gepeng
+                    )
+                  : null,
             ),
-            child: const Icon(Icons.image, size: 40, color: Colors.grey), 
+            child: kost.daftarFoto.isEmpty 
+                ? const Icon(Icons.image, size: 40, color: Colors.grey)
+                : null,
           ),
           const SizedBox(width: 16),
           Expanded(

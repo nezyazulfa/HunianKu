@@ -29,6 +29,8 @@ class KostModel {
   final String deskripsi;
   @HiveField(11)
   final String status;
+  @HiveField(12)
+  final List<String> daftarFoto;
   KostModel({
     this.id,
     required this.idkost,
@@ -42,6 +44,7 @@ class KostModel {
     required this.daftarfasilitas,
     required this.deskripsi,
     required this.status,
+    this.daftarFoto = const [],
   });
 
   factory KostModel.fromMap(Map<String, dynamic> map) {
@@ -58,6 +61,7 @@ class KostModel {
       daftarfasilitas: map['daftarfasilitas'] ?? '',
       deskripsi: map['deskripsi'] ?? '',
       status: map['status'] ?? '',
+      daftarFoto: map['daftarFoto'] != null ? List<String>.from(map['daftarFoto']) : [],
     );
   }
 
@@ -75,6 +79,7 @@ class KostModel {
       'daftarfasilitas': daftarfasilitas,
       'deskripsi': deskripsi,
       'status': status,
+      'daftarFoto': daftarFoto,
     };
   }
 }
