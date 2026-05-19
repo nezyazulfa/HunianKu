@@ -82,12 +82,11 @@ class _AddKostPageState extends State<AddKostPage> {
   }
 
   // --- FUNGSI UNTUK MEMUNCULKAN DIALOG FILTER PCD ---
-  // --- FUNGSI UNTUK MEMUNCULKAN DIALOG FILTER PCD (DIUPDATE UNTUK 2 FILTER) ---
   Future<void> _showFilterDialog(int index) async {
     File selectedFile = _imageFiles[index];
     
     // State untuk kontrol UI di dalam dialog
-    String selectedFilter = 'Brightness'; // Default filter yang terpilih
+    String selectedFilter = 'Brightness'; // Default yang terpilih
     double brightnessLevel = 0.0; 
     bool isProcessing = false;
 
@@ -103,25 +102,34 @@ class _AddKostPageState extends State<AddKostPage> {
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // --- PILIHAN FILTER (Chips) ---
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  // --- PILIHAN FILTER MENGGUNAKAN WRAP ---
+                  Wrap(
+                    spacing: 8, 
+                    runSpacing: 8,
+                    alignment: WrapAlignment.center,
                     children: [
                       ChoiceChip(
-                        label: const Text('Kecerahan'),
+                        label: const Text('Kecerahan', style: TextStyle(fontSize: 12)),
                         selected: selectedFilter == 'Brightness',
                         selectedColor: primaryGreen.withOpacity(0.2),
                         onSelected: (selected) {
                           if (selected) setDialogState(() => selectedFilter = 'Brightness');
                         },
                       ),
-                      const SizedBox(width: 8),
                       ChoiceChip(
-                        label: const Text('Penajaman'),
+                        label: const Text('Penajaman', style: TextStyle(fontSize: 12)),
                         selected: selectedFilter == 'Sharpen',
                         selectedColor: primaryGreen.withOpacity(0.2),
                         onSelected: (selected) {
                           if (selected) setDialogState(() => selectedFilter = 'Sharpen');
+                        },
+                      ),
+                      ChoiceChip(
+                        label: const Text('Ekualisasi', style: TextStyle(fontSize: 12)),
+                        selected: selectedFilter == 'Equalization',
+                        selectedColor: primaryGreen.withOpacity(0.2),
+                        onSelected: (selected) {
+                          if (selected) setDialogState(() => selectedFilter = 'Equalization');
                         },
                       ),
                     ],
@@ -137,7 +145,7 @@ class _AddKostPageState extends State<AddKostPage> {
                       child: isProcessing
                           ? const Center(child: CircularProgressIndicator())
                           : (selectedFilter == 'Brightness')
-                              // Jika Kecerahan (Point Operation) -> Bisa Preview Realtime
+                              // Jika Kecerahan -> Preview Realtime
                               ? ColorFiltered(
                                   colorFilter: ColorFilter.matrix([
                                     1, 0, 0, 0, brightnessLevel,
@@ -147,7 +155,7 @@ class _AddKostPageState extends State<AddKostPage> {
                                   ]),
                                   child: Image.file(selectedFile, fit: BoxFit.cover),
                                 )
-                              // Jika Penajaman (Spatial Operation) -> Hanya tampilkan gambar asli
+                              // Jika filter lain -> Tampilkan gambar asli (hasil terlihat setelah proses)
                               : Image.file(selectedFile, fit: BoxFit.cover),
                     ),
                   ),
@@ -166,11 +174,10 @@ class _AddKostPageState extends State<AddKostPage> {
                           : (value) => setDialogState(() => brightnessLevel = value),
                     ),
                   ] else ...[
-                    // Info untuk filter Penajaman
                     const Padding(
                       padding: EdgeInsets.only(top: 8.0),
                       child: Text(
-                        'Konvolusi High-pass filter akan diproses. Hasil akan terlihat setelah diterapkan.',
+                        'Proses komputasi matriks akan dijalankan. Hasil akan terlihat setelah diterapkan.',
                         style: TextStyle(fontSize: 12, color: Colors.black54, fontStyle: FontStyle.italic),
                         textAlign: TextAlign.center,
                       ),
@@ -202,9 +209,13 @@ class _AddKostPageState extends State<AddKostPage> {
                                 'bytes': bytes,
                                 'brightness': brightnessLevel,
                               });
-                            } else {
-                              // Panggil fungsi penajaman (Konvolusi)
+                            } else if (selectedFilter == 'Sharpen') {
                               processedBytes = await compute(applySharpening, {
+                                'bytes': bytes,
+                              });
+                            } else {
+                              // Filter Equalization
+                              processedBytes = await compute(applyHistogramEqualization, {
                                 'bytes': bytes,
                               });
                             }
@@ -437,7 +448,7 @@ class _AddKostPageState extends State<AddKostPage> {
     );
   }
 
-  // --- WIDGET UI UNTUK MENAMPILKAN BANYAK GAMBAR (DIUPDATE) ---
+  // --- WIDGET UI UNTUK MENAMPILKAN BANYAK GAMBAR ---
   Widget _buildImageGallery() {
     if (_imageFiles.isEmpty) {
       return InkWell(
@@ -496,7 +507,6 @@ class _AddKostPageState extends State<AddKostPage> {
 
           return Stack(
             children: [
-              // --- TAMBAHAN GESTURE UNTUK MEMBUKA FILTER ---
               GestureDetector(
                 onTap: () => _showFilterDialog(index), 
                 child: Container(
@@ -513,7 +523,6 @@ class _AddKostPageState extends State<AddKostPage> {
                         _imageFiles[index],
                         fit: BoxFit.cover,
                       ),
-                      // Ikon kuas kecil di pojok kiri bawah sebagai tanda bisa di-edit
                       Positioned(
                         bottom: 8,
                         left: 8,
