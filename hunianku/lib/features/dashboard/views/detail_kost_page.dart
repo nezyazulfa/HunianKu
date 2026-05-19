@@ -122,13 +122,14 @@ class _DetailKostPageState extends State<DetailKostPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      if (widget.kost.daftarFoto.isEmpty)
                       Center(
                         child: Container(
                           width: 220, 
                           height: 260, 
                           decoration: BoxDecoration(
                             color: Colors.grey[300],
-                            borderRadius: BorderRadius.circular(24),
+                            borderRadius: BorderRadius.circular(24),         
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.black.withOpacity(0.15),
@@ -136,10 +137,44 @@ class _DetailKostPageState extends State<DetailKostPage> {
                                 offset: const Offset(0, 10),
                               ),
                             ],
-                          ),
-                          child: const Icon(Icons.image, size: 60, color: Colors.grey),
+                          ),                          
+                          child: const Icon(Icons.image, size: 40, color: Colors.grey),
                         ),
-                      ),
+                      )
+                      else
+                        SizedBox(
+                          height: 260, 
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: widget.kost.daftarFoto.length, 
+                            itemBuilder: (context, index) {
+                              return Container(
+                                width: 220, 
+                                margin: EdgeInsets.only(
+                                  right: 16.0, 
+                                  left: widget.kost.daftarFoto.length == 1 ? (MediaQuery.of(context).size.width - 220 - 48) / 2 : 0, 
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[300],
+                                  borderRadius: BorderRadius.circular(24),
+                                  image: DecorationImage(
+                                    image: NetworkImage(widget.kost.daftarFoto[index]), // Ambil foto ke-1, ke-2, dst
+                                    fit: BoxFit.cover,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.15),
+                                      blurRadius: 15,
+                                      offset: const Offset(0, 8),
+                                    ),
+                                  ],
+                                ),                          
+                              );
+                            },
+                          ),
+                        ),
+                      const SizedBox(height: 32),
+                      ExcludeSemantics(),
                       const SizedBox(height: 32),
                       _buildDetailItem('Jenis Kost:', widget.kost.jenis),
                       const SizedBox(height: 16),

@@ -114,8 +114,16 @@ class _BookmarkPageState extends State<BookmarkPage> {
             decoration: BoxDecoration(
               color: Colors.grey[300],
               borderRadius: BorderRadius.circular(16),
+              image: kost.daftarFoto.isNotEmpty
+                  ? DecorationImage(
+                      image: NetworkImage(kost.daftarFoto[0]), // Ambil foto urutan pertama
+                      fit: BoxFit.cover, // Biar fotonya memenuhi kotak tanpa gepeng
+                    )
+                  : null,
             ),
-            child: const Icon(Icons.image, size: 40, color: Colors.grey), 
+            child: kost.daftarFoto.isEmpty 
+                ? const Icon(Icons.image, size: 40, color: Colors.grey)
+                : null,
           ),
           const SizedBox(width: 16),
           
