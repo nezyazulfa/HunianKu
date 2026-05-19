@@ -82,9 +82,13 @@ class _AddKostPageState extends State<AddKostPage> {
   }
 
   // --- FUNGSI UNTUK MEMUNCULKAN DIALOG FILTER PCD ---
+  // --- FUNGSI UNTUK MEMUNCULKAN DIALOG FILTER PCD (DIUPDATE UNTUK 2 FILTER) ---
   Future<void> _showFilterDialog(int index) async {
     File selectedFile = _imageFiles[index];
-    double brightnessLevel = 0.0; // Range: -255 hingga 255
+    
+    // State untuk kontrol UI di dalam dialog
+    String selectedFilter = 'Brightness'; // Default filter yang terpilih
+    double brightnessLevel = 0.0; 
     bool isProcessing = false;
 
     await showDialog(
@@ -95,11 +99,36 @@ class _AddKostPageState extends State<AddKostPage> {
           builder: (context, setDialogState) {
             return AlertDialog(
               backgroundColor: Colors.white,
-              title: const Text('Filter Kecerahan', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              title: const Text('Filter Gambar (PCD)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // --- AREA PREVIEW (ColorMatrix) ---
+                  // --- PILIHAN FILTER (Chips) ---
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ChoiceChip(
+                        label: const Text('Kecerahan'),
+                        selected: selectedFilter == 'Brightness',
+                        selectedColor: primaryGreen.withOpacity(0.2),
+                        onSelected: (selected) {
+                          if (selected) setDialogState(() => selectedFilter = 'Brightness');
+                        },
+                      ),
+                      const SizedBox(width: 8),
+                      ChoiceChip(
+                        label: const Text('Penajaman'),
+                        selected: selectedFilter == 'Sharpen',
+                        selectedColor: primaryGreen.withOpacity(0.2),
+                        onSelected: (selected) {
+                          if (selected) setDialogState(() => selectedFilter = 'Sharpen');
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // --- AREA PREVIEW ---
                   ClipRRect(
                     borderRadius: BorderRadius.circular(12),
                     child: SizedBox(
@@ -107,34 +136,46 @@ class _AddKostPageState extends State<AddKostPage> {
                       width: double.infinity,
                       child: isProcessing
                           ? const Center(child: CircularProgressIndicator())
-                          : ColorFiltered(
-                              colorFilter: ColorFilter.matrix([
-                                1, 0, 0, 0, brightnessLevel,
-                                0, 1, 0, 0, brightnessLevel,
-                                0, 0, 1, 0, brightnessLevel,
-                                0, 0, 0, 1, 0,
-                              ]),
-                              child: Image.file(selectedFile, fit: BoxFit.cover),
-                            ),
+                          : (selectedFilter == 'Brightness')
+                              // Jika Kecerahan (Point Operation) -> Bisa Preview Realtime
+                              ? ColorFiltered(
+                                  colorFilter: ColorFilter.matrix([
+                                    1, 0, 0, 0, brightnessLevel,
+                                    0, 1, 0, 0, brightnessLevel,
+                                    0, 0, 1, 0, brightnessLevel,
+                                    0, 0, 0, 1, 0,
+                                  ]),
+                                  child: Image.file(selectedFile, fit: BoxFit.cover),
+                                )
+                              // Jika Penajaman (Spatial Operation) -> Hanya tampilkan gambar asli
+                              : Image.file(selectedFile, fit: BoxFit.cover),
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
                   
-                  // --- SLIDER INTENSITAS ---
-                  Text('Intensitas: ${brightnessLevel.toInt()}'),
-                  Slider(
-                    value: brightnessLevel,
-                    min: -255.0,
-                    max: 255.0,
-                    activeColor: primaryGreen,
-                    onChanged: isProcessing
-                        ? null
-                        : (value) {
-                            setDialogState(() {
-                              brightnessLevel = value;
-                            });
-                          },
-                  ),
+                  // --- AREA KONTROL TAMBAHAN ---
+                  if (selectedFilter == 'Brightness') ...[
+                    Text('Intensitas: ${brightnessLevel.toInt()}'),
+                    Slider(
+                      value: brightnessLevel,
+                      min: -255.0,
+                      max: 255.0,
+                      activeColor: primaryGreen,
+                      onChanged: isProcessing
+                          ? null
+                          : (value) => setDialogState(() => brightnessLevel = value),
+                    ),
+                  ] else ...[
+                    // Info untuk filter Penajaman
+                    const Padding(
+                      padding: EdgeInsets.only(top: 8.0),
+                      child: Text(
+                        'Konvolusi High-pass filter akan diproses. Hasil akan terlihat setelah diterapkan.',
+                        style: TextStyle(fontSize: 12, color: Colors.black54, fontStyle: FontStyle.italic),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ]
                 ],
               ),
               actions: [
@@ -151,17 +192,27 @@ class _AddKostPageState extends State<AddKostPage> {
 
                           try {
                             final bytes = await selectedFile.readAsBytes();
+                            Uint8List processedBytes;
 
-                            // Melempar perhitungan gambar ke Isolate (Helper PCD)
-                            final processedBytes = await compute(applyBrightness, {
-                              'bytes': bytes,
-                              'brightness': brightnessLevel,
-                            });
+                            // ----------------------------------------------------
+                            // PERCABANGAN EKSEKUSI PCD DI ISOLATE (BACKGROUND)
+                            // ----------------------------------------------------
+                            if (selectedFilter == 'Brightness') {
+                              processedBytes = await compute(applyBrightness, {
+                                'bytes': bytes,
+                                'brightness': brightnessLevel,
+                              });
+                            } else {
+                              // Panggil fungsi penajaman (Konvolusi)
+                              processedBytes = await compute(applySharpening, {
+                                'bytes': bytes,
+                              });
+                            }
 
-                            // Simpan dan timpa file dengan gambar yang sudah diedit
+                            // Simpan dan timpa file dengan gambar yang sudah difilter
                             await selectedFile.writeAsBytes(processedBytes);
 
-                            // Update UI layar utama
+                            // Update UI di halaman utama
                             setState(() {
                               _imageFiles[index] = selectedFile; 
                             });

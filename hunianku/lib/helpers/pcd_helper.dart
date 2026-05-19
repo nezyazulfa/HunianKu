@@ -1,8 +1,7 @@
+// Lokasi: lib/helpers/pcd_helper.dart
+
 import 'dart:typed_data';
 import 'package:image/image.dart' as img;
-
-/// Kumpulan fungsi Operasi Titik & Spasial untuk Pengolahan Citra Digital (PCD)
-/// Fungsi-fungsi ini dibuat top-level agar aman dijalankan di dalam Isolate (compute).
 
 // --- 1. FILTER KECERAHAN (BRIGHTNESS) ---
 Future<Uint8List> applyBrightness(Map<String, dynamic> params) async {
@@ -16,25 +15,24 @@ Future<Uint8List> applyBrightness(Map<String, dynamic> params) async {
   return img.encodeJpg(processedImage, quality: 90);
 }
 
-// --- 2. FILTER GRAYSCALE (Contoh) ---
-Future<Uint8List> applyGrayscale(Map<String, dynamic> params) async {
+// --- 2. FILTER PENAJAMAN (SHARPENING / HIGH-PASS FILTER) ---
+Future<Uint8List> applySharpening(Map<String, dynamic> params) async {
   final Uint8List imageBytes = params['bytes'];
 
+  // 1. Decode byte ke matriks gambar
   img.Image? decodedImage = img.decodeImage(imageBytes);
   if (decodedImage == null) return imageBytes;
 
-  img.Image processedImage = img.grayscale(decodedImage);
+  // 2. Siapkan Kernel High-pass Filter 3x3
+  const List<num> sharpenKernel = [
+     0, -1,  0,
+    -1,  5, -1,
+     0, -1,  0
+  ];
+
+  // 3. Terapkan konvolusi spasial
+  img.Image processedImage = img.convolution(decodedImage, filter: sharpenKernel);
+  
+  // 4. Encode kembali menjadi file gambar JPG
   return img.encodeJpg(processedImage, quality: 90);
-}
-
-// --- 3. FILTER KETIGA (Bisa diisi nanti) ---
-Future<Uint8List> applyFilterTiga(Map<String, dynamic> params) async {
-  // Logika filter 3
-  return params['bytes'];
-}
-
-// --- 4. FILTER KEEMPAT (Bisa diisi nanti) ---
-Future<Uint8List> applyFilterEmpat(Map<String, dynamic> params) async {
-  // Logika filter 4
-  return params['bytes'];
 }
