@@ -4,6 +4,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:hunianku/features/dashboard/model/kost_model.dart';
 import 'package:hunianku/features/tambah_kost/controllers/tambah_kost_controller.dart';
 import 'package:hunianku/services/session_service.dart';
+import 'package:hunianku/helpers/pcd_helper.dart'; 
+import 'package:flutter/foundation.dart';
 
 class AddKostPage extends StatefulWidget {
   const AddKostPage({super.key});
@@ -27,11 +29,9 @@ class _AddKostPageState extends State<AddKostPage> {
   String _selectedStatus = 'Full';
   String _currentIdUser = '';
 
-  // --- 1. UBAH MENJADI LIST UNTUK MENYIMPAN BANYAK FOTO ---
   List<File> _imageFiles = [];
   final ImagePicker _picker = ImagePicker();
 
-  // --- 2. FUNGSI KAMERA (Tetap 1 foto per jepretan, tapi ditambahkan ke list) ---
   Future<void> _pickFromCamera() async {
     try {
       final XFile? pickedFile = await _picker.pickImage(
@@ -53,17 +53,14 @@ class _AddKostPageState extends State<AddKostPage> {
     }
   }
 
-  // --- 3. FUNGSI GALERI (Bisa pilih banyak foto sekaligus) ---
   Future<void> _pickFromGallery() async {
     try {
-      // Menggunakan pickMultiImage
       final List<XFile> pickedFiles = await _picker.pickMultiImage(
         imageQuality: 80,
       );
 
       if (pickedFiles.isNotEmpty) {
         setState(() {
-          // Tambahkan semua foto yang dipilih ke dalam list
           for (var xfile in pickedFiles) {
             _imageFiles.add(File(xfile.path));
           }
@@ -78,11 +75,114 @@ class _AddKostPageState extends State<AddKostPage> {
     }
   }
 
-  // Fungsi untuk menghapus foto dari list jika user salah pilih
   void _removeImage(int index) {
     setState(() {
       _imageFiles.removeAt(index);
     });
+  }
+
+  // --- FUNGSI UNTUK MEMUNCULKAN DIALOG FILTER PCD ---
+  Future<void> _showFilterDialog(int index) async {
+    File selectedFile = _imageFiles[index];
+    double brightnessLevel = 0.0; // Range: -255 hingga 255
+    bool isProcessing = false;
+
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: Colors.white,
+              title: const Text('Filter Kecerahan', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // --- AREA PREVIEW (ColorMatrix) ---
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: SizedBox(
+                      height: 200,
+                      width: double.infinity,
+                      child: isProcessing
+                          ? const Center(child: CircularProgressIndicator())
+                          : ColorFiltered(
+                              colorFilter: ColorFilter.matrix([
+                                1, 0, 0, 0, brightnessLevel,
+                                0, 1, 0, 0, brightnessLevel,
+                                0, 0, 1, 0, brightnessLevel,
+                                0, 0, 0, 1, 0,
+                              ]),
+                              child: Image.file(selectedFile, fit: BoxFit.cover),
+                            ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  
+                  // --- SLIDER INTENSITAS ---
+                  Text('Intensitas: ${brightnessLevel.toInt()}'),
+                  Slider(
+                    value: brightnessLevel,
+                    min: -255.0,
+                    max: 255.0,
+                    activeColor: primaryGreen,
+                    onChanged: isProcessing
+                        ? null
+                        : (value) {
+                            setDialogState(() {
+                              brightnessLevel = value;
+                            });
+                          },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isProcessing ? null : () => Navigator.pop(context),
+                  child: Text('Batal', style: TextStyle(color: primaryRed)),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: primaryGreen),
+                  onPressed: isProcessing
+                      ? null
+                      : () async {
+                          setDialogState(() => isProcessing = true);
+
+                          try {
+                            final bytes = await selectedFile.readAsBytes();
+
+                            // Melempar perhitungan gambar ke Isolate (Helper PCD)
+                            final processedBytes = await compute(applyBrightness, {
+                              'bytes': bytes,
+                              'brightness': brightnessLevel,
+                            });
+
+                            // Simpan dan timpa file dengan gambar yang sudah diedit
+                            await selectedFile.writeAsBytes(processedBytes);
+
+                            // Update UI layar utama
+                            setState(() {
+                              _imageFiles[index] = selectedFile; 
+                            });
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Gagal menerapkan filter: $e')),
+                            );
+                          }
+
+                          if (mounted) Navigator.pop(context);
+                        },
+                  child: isProcessing 
+                      ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                      : const Text('Terapkan', style: TextStyle(color: Colors.white)),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   final Color backgroundColor = const Color(0xFFEFEBE1); 
@@ -139,7 +239,7 @@ class _AddKostPageState extends State<AddKostPage> {
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 70.0, right: 10.0),
         child: FloatingActionButton(
-          onPressed: _pickFromCamera, // Panggil fungsi kamera
+          onPressed: _pickFromCamera,
           backgroundColor: primaryGreen,
           elevation: 6,
           shape: const CircleBorder(),
@@ -179,7 +279,7 @@ class _AddKostPageState extends State<AddKostPage> {
                     ),
                     const SizedBox(height: 24),
 
-                    // --- AREA UPLOAD GAMBAR (DIUPDATE) ---
+                    // --- AREA UPLOAD GAMBAR ---
                     _buildImageGallery(),
                     
                     const SizedBox(height: 24),
@@ -286,9 +386,8 @@ class _AddKostPageState extends State<AddKostPage> {
     );
   }
 
-  // --- WIDGET UI UNTUK MENAMPILKAN BANYAK GAMBAR ---
+  // --- WIDGET UI UNTUK MENAMPILKAN BANYAK GAMBAR (DIUPDATE) ---
   Widget _buildImageGallery() {
-    // Jika belum ada foto sama sekali, tampilkan kotak besar seperti desain awal
     if (_imageFiles.isEmpty) {
       return InkWell(
         onTap: _pickFromGallery,
@@ -315,14 +414,12 @@ class _AddKostPageState extends State<AddKostPage> {
       );
     }
 
-    // Jika sudah ada foto, tampilkan secara horizontal (bisa digeser ke samping)
     return SizedBox(
-      height: 120, // Tinggi deretan foto
+      height: 120,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        itemCount: _imageFiles.length + 1, // +1 untuk kotak "Tambah Foto" di paling ujung
+        itemCount: _imageFiles.length + 1, 
         itemBuilder: (context, index) {
-          // Jika ini item terakhir, tampilkan kotak untuk tambah foto lagi
           if (index == _imageFiles.length) {
             return GestureDetector(
               onTap: _pickFromGallery,
@@ -346,22 +443,42 @@ class _AddKostPageState extends State<AddKostPage> {
             );
           }
 
-          // Tampilkan foto-foto yang sudah dipilih
           return Stack(
             children: [
-              Container(
-                width: 120,
-                margin: const EdgeInsets.only(right: 12),
-                clipBehavior: Clip.hardEdge,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Image.file(
-                  _imageFiles[index],
-                  fit: BoxFit.cover,
+              // --- TAMBAHAN GESTURE UNTUK MEMBUKA FILTER ---
+              GestureDetector(
+                onTap: () => _showFilterDialog(index), 
+                child: Container(
+                  width: 120,
+                  margin: const EdgeInsets.only(right: 12),
+                  clipBehavior: Clip.hardEdge,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Image.file(
+                        _imageFiles[index],
+                        fit: BoxFit.cover,
+                      ),
+                      // Ikon kuas kecil di pojok kiri bawah sebagai tanda bisa di-edit
+                      Positioned(
+                        bottom: 8,
+                        left: 8,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(Icons.tune, color: Colors.white, size: 16),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              // Tombol silang (X) warna merah di pojok kanan atas foto untuk menghapus
               Positioned(
                 top: 4,
                 right: 16,
@@ -393,7 +510,7 @@ class _AddKostPageState extends State<AddKostPage> {
     _hargaController.clear();
     _kontakController.clear();
     setState(() {
-      _imageFiles.clear(); // Kosongkan list gambar setelah disimpan
+      _imageFiles.clear(); 
     });
   }
 
