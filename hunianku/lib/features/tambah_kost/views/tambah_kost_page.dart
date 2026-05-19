@@ -125,6 +125,10 @@ class _AddKostPageState extends State<AddKostPage> {
                     ),
                     const SizedBox(height: 24),
 
+                    // --- KOTAK UPLOAD GAMBAR ---
+                    _buildImageUploadBox(),
+                    const SizedBox(height: 24),
+
                     // --- FIELD INPUT ---
                     _buildTextField(controller: _namaController, hintText: 'Nama Kost'),
                     const SizedBox(height: 16),
@@ -190,14 +194,7 @@ class _AddKostPageState extends State<AddKostPage> {
                             onPressed: () {
                               final kostDraft = _buatObjekKost();
                               _controller.simpanKeDraf(context, kostDraft, () {
-                                // Fungsi ini akan dipanggil otomatis oleh controller saat sukses
-                                _namaController.clear();
-                                _deskripsiController.clear();
-                                _alamatController.clear();
-                                _gmapsController.clear();
-                                _fasilitasController.clear();
-                                _hargaController.clear();
-                                _kontakController.clear();
+                                _clearAllFields();
                               });
                             },
                             style: OutlinedButton.styleFrom(
@@ -231,14 +228,7 @@ class _AddKostPageState extends State<AddKostPage> {
                               }
                               final kostBaru = _buatObjekKost();
                               _controller.simpanKost(context, kostBaru, () {
-                                // Fungsi ini akan dipanggil otomatis oleh controller saat sukses
-                                _namaController.clear();
-                                _deskripsiController.clear();
-                                _alamatController.clear();
-                                _gmapsController.clear();
-                                _fasilitasController.clear();
-                                _hargaController.clear();
-                                _kontakController.clear();
+                                _clearAllFields();
                               });
                             },
                             style: ElevatedButton.styleFrom(
@@ -272,6 +262,69 @@ class _AddKostPageState extends State<AddKostPage> {
         ),
       ),
     );
+  }
+
+  // WIDGET KOTAK UPLOAD FOTO
+  Widget _buildImageUploadBox() {
+    return InkWell(
+      onTap: () {
+        // TODO: Tambahkan logika ImagePicker di sini nanti
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Fitur upload foto segera hadir!')),
+        );
+      },
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        height: 160,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: Colors.grey[200], // Warna abu-abu muda
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: Colors.grey.shade400,
+            width: 1.5,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.add_photo_alternate_outlined,
+              size: 48,
+              color: Colors.grey[600],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Upload Foto Kost',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Format: JPG, PNG',
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.grey[500],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Fungsi bantuan untuk membersihkan field (agar kode tidak kepanjangan di tombol simpan)
+  void _clearAllFields() {
+    _namaController.clear();
+    _deskripsiController.clear();
+    _alamatController.clear();
+    _gmapsController.clear();
+    _fasilitasController.clear();
+    _hargaController.clear();
+    _kontakController.clear();
   }
 
   // Widget bantuan untuk membuat Text Field yang seragam
