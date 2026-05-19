@@ -1,11 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:hunianku/features/dashboard/model/kost_model.dart';
 import 'package:hunianku/features/review/controllers/review_controller.dart';
+import 'package:hunianku/features/review/model/review_model.dart'; // Import Model Review
 
 class TambahReviewPage extends StatefulWidget {
   final KostModel kost;
+  
+  // Parameter baru untuk mode Edit
+  final bool isEdit;
+  final ReviewModel? existingReview;
 
-  const TambahReviewPage({super.key, required this.kost});
+  const TambahReviewPage({
+    super.key, 
+    required this.kost,
+    this.isEdit = false, 
+    this.existingReview,
+  });
 
   @override
   State<TambahReviewPage> createState() => _TambahReviewPageState();
@@ -13,7 +23,7 @@ class TambahReviewPage extends StatefulWidget {
 
 class _TambahReviewPageState extends State<TambahReviewPage> {
   final ReviewController _controller = ReviewController();
-  final TextEditingController _reviewController = TextEditingController();
+  late TextEditingController _reviewController;
   int _selectedRating = 5; 
   
   final Color backgroundColor = const Color(0xFFEFEBE1); 
@@ -21,6 +31,19 @@ class _TambahReviewPageState extends State<TambahReviewPage> {
   final Color cardColor = Colors.white; 
   final Color primaryGreen = const Color(0xFF4A6525); 
   final Color starColor = const Color(0xFFEBC144);
+
+  @override
+  void initState() {
+    super.initState();
+    // Mengisi data jika masuk sebagai mode edit
+    _reviewController = TextEditingController(
+      text: widget.isEdit ? widget.existingReview?.komentar : ''
+    );
+    
+    if (widget.isEdit && widget.existingReview != null) {
+      _selectedRating = int.tryParse(widget.existingReview!.rating) ?? 5;
+    }
+  }
 
   @override
   void dispose() {
@@ -50,14 +73,53 @@ class _TambahReviewPageState extends State<TambahReviewPage> {
                       onPressed: () => Navigator.pop(context),
                     ),
                   ),
-                  const Text(
-                    'Tambah Ulasan',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.black87,
-                    ),
+                  Text(
+                    widget.isEdit ? 'Edit Ulasan' : 'Tambah Ulasan',
+                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Colors.black87),
                   ),
+                  // --- TOMBOL HAPUS (HANYA MUNCUL DI MODE EDIT) ---
+                  if (widget.isEdit)
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: ValueListenableBuilder<bool>(
+                        valueListenable: _controller.isLoading,
+                        builder: (context, isLoading, child) {
+                          return IconButton(
+                            icon: const Icon(Icons.delete_outline, color: Color(0xFF6B1212), size: 28), // Menggunakan warna merah buttonRed
+                            onPressed: isLoading ? null : () {
+                              showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return AlertDialog(
+                                    backgroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                                    title: const Text('Hapus Ulasan', style: TextStyle(fontWeight: FontWeight.bold)),
+                                    content: const Text('Apakah Anda yakin ingin menghapus ulasan ini?'),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(context),
+                                        child: const Text('Batal', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                                      ),
+                                      ElevatedButton(
+                                        onPressed: () {
+                                          Navigator.pop(context);
+                                          _controller.deleteReview(context, widget.existingReview!.id); 
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: const Color(0xFF6B1212), // Merah
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                        ),
+                                        child: const Text('Hapus', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
+                            },
+                          );
+                        }
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -69,10 +131,7 @@ class _TambahReviewPageState extends State<TambahReviewPage> {
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: containerColor,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(32),
-                    topRight: Radius.circular(32),
-                  ),
+                  borderRadius: const BorderRadius.only(topLeft: Radius.circular(32), topRight: Radius.circular(32)),
                 ),
                 child: Column(
                   children: [
@@ -90,16 +149,15 @@ class _TambahReviewPageState extends State<TambahReviewPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Judul Kost
                             Text(
                               widget.kost.namakost,
                               style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.black87),
                             ),
                             const SizedBox(height: 16),
-
-                            // Pilihan Bintang (Rating)
                             const Text('Berikan Penilaian:', style: TextStyle(fontWeight: FontWeight.bold)),
                             const SizedBox(height: 8),
+                            
+                            // Bintang interaktif
                             Row(
                               children: List.generate(5, (index) {
                                 return IconButton(
@@ -120,7 +178,7 @@ class _TambahReviewPageState extends State<TambahReviewPage> {
                             ),
                             const SizedBox(height: 24),
                             
-                            // Form Input Ulasan
+                            // Form Input
                             Expanded(
                               child: TextField(
                                 controller: _reviewController,
@@ -145,14 +203,31 @@ class _TambahReviewPageState extends State<TambahReviewPage> {
                         valueListenable: _controller.isLoading,
                         builder: (context, isLoading, child) {
                           return ElevatedButton(
-                            // Matikan tombol jika sedang loading
-                            onPressed: isLoading ? null : () {
-                              _controller.tambahReview(
-                                context, 
-                                widget.kost, 
-                                _selectedRating, 
-                                _reviewController.text.trim()
-                              );
+                            onPressed: isLoading ? null : () async {
+                              if (widget.isEdit) {
+                                await _controller.editReview(
+                                  context, 
+                                  widget.existingReview!.id,
+                                  _selectedRating, 
+                                  _reviewController.text.trim()
+                                );
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Ulasan berhasil diperbarui!'))
+                                  );
+                                  Navigator.pop(context, true); 
+                                }
+                              } else {
+                                await _controller.tambahReview(
+                                  context, 
+                                  widget.kost, 
+                                  _selectedRating, 
+                                  _reviewController.text.trim()
+                                );
+                                if (context.mounted) {
+                                  Navigator.pop(context, true);
+                                }
+                              }
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: primaryGreen,
@@ -166,7 +241,10 @@ class _TambahReviewPageState extends State<TambahReviewPage> {
                                     width: 20, height: 20,
                                     child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                                   )
-                                : const Text('Kirim Ulasan', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                : Text(
+                                    widget.isEdit ? 'Simpan Perubahan' : 'Kirim Ulasan', 
+                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)
+                                  ),
                           );
                         }
                       ),

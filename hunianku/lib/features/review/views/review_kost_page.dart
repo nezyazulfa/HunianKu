@@ -16,25 +16,40 @@ class ReviewKostPage extends StatefulWidget {
 class _ReviewKostPageState extends State<ReviewKostPage> {
   final ReviewController _controller = ReviewController();
   String _userRole = '';
+  String _currentUserId = ''; // Menyimpan ID user yang sedang login
 
   final Color backgroundColor = const Color(0xFFEFEBE1); 
   final Color containerColor = const Color(0xFFFBFBF9); 
   final Color cardColor = Colors.white; 
-  // Warna hijau olive tua agar kontras dengan ikon putih
   final Color primaryGreen = const Color(0xFF4A6525); 
 
   @override
   void initState() {
     super.initState();
     _controller.fetchReviews(widget.kost.idkost);
-    _loadUserRole();
+    _loadUserRoleAndId();
   }
 
-  Future<void> _loadUserRole() async {
+  // Mengambil Role sekaligus ID User yang sedang login
+  Future<void> _loadUserRoleAndId() async {
     final role = await SessionService.getRole() ?? '';
+    final userId = await SessionService.getIdUser() ?? ''; 
     setState(() {
       _userRole = role;
+      _currentUserId = userId;
     });
+  }
+
+  // Fungsi mengecek apakah user login sudah pernah memberi ulasan
+  ReviewModel? _getMyReview() {
+    try {
+      // Mengecek kecocokan ID dari list review dengan ID user yang sedang login
+      return _controller.reviewsList.value.firstWhere(
+        (review) => review.user?.id == _currentUserId || review.user?.iduser == _currentUserId
+      );
+    } catch (e) {
+      return null; // Jika tidak ketemu (belum review)
+    }
   }
 
   @override
@@ -98,7 +113,6 @@ class _ReviewKostPageState extends State<ReviewKostPage> {
                         }
 
                         return ListView.builder(
-                          // Jarak bawah 100 agar kartu terakhir aman dari tombol FAB
                           padding: const EdgeInsets.only(left: 24.0, right: 24.0, top: 8.0, bottom: 100.0),
                           itemCount: reviews.length,
                           itemBuilder: (context, index) {
@@ -114,59 +128,73 @@ class _ReviewKostPageState extends State<ReviewKostPage> {
           ),
         ),
       ),
-      // FLOATING ACTION BUTTON YANG LEBIH INTERAKTIF
+      // FLOATING ACTION BUTTON
       floatingActionButton: _userRole == 'penghuni' 
           ? FloatingActionButton(
               onPressed: () {
-                // MEMUNCULKAN POPUP KONFIRMASI
-                showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return AlertDialog(
-                      backgroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(24),
+                // 1. CEK APAKAH SUDAH PERNAH REVIEW
+                final myReview = _getMyReview();
+
+                if (myReview != null) {
+                  // JIKA SUDAH: Lempar ke form dalam mode EDIT
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => TambahReviewPage(
+                        kost: widget.kost,
+                        isEdit: true,
+                        existingReview: myReview, // Bawa data review lamanya
                       ),
-                      title: const Text(
-                        'Konfirmasi Penghuni',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      content: const Text(
-                        'Apakah Anda benar merupakan penghuni dari kost ini?',
-                        style: TextStyle(height: 1.4),
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text('Bukan', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                    ),
+                  ).then((isSuccess) {
+                    if (isSuccess == true) {
+                      _controller.fetchReviews(widget.kost.idkost); // Refresh jika sukses edit
+                    }
+                  });
+                } else {
+                  // JIKA BELUM: Munculkan popup konfirmasi
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        backgroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                        title: const Text('Konfirmasi Penghuni', style: TextStyle(fontWeight: FontWeight.bold)),
+                        content: const Text(
+                          'Apakah Anda benar merupakan penghuni dari kost ini?',
+                          style: TextStyle(height: 1.4),
                         ),
-                        ElevatedButton(
-                          onPressed: () {
-                            Navigator.pop(context); 
-                            
-                            // Lanjut navigasi dan TUNGGU hasilnya (menggunakan .then)
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => TambahReviewPage(kost: widget.kost),
-                              ),
-                            ).then((isSuccess) {
-                              // Jika sukses (kembalian bernilai true), refresh data ulasannya!
-                              if (isSuccess == true) {
-                                _controller.fetchReviews(widget.kost.idkost);
-                              }
-                            });
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: primaryGreen,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('Bukan', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
                           ),
-                          child: const Text('Ya, Saya Penghuni', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                        ),
-                      ],
-                    );
-                  },
-                );
+                          ElevatedButton(
+                            onPressed: () {
+                              Navigator.pop(context); 
+                              // Lanjut navigasi mode TAMBAH BARU
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => TambahReviewPage(kost: widget.kost, isEdit: false),
+                                ),
+                              ).then((isSuccess) {
+                                if (isSuccess == true) {
+                                  _controller.fetchReviews(widget.kost.idkost); // Refresh jika sukses tambah
+                                }
+                              });
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: primaryGreen,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            child: const Text('Ya, Saya Penghuni', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                }
               },
               backgroundColor: primaryGreen,
               elevation: 5,
@@ -182,7 +210,6 @@ class _ReviewKostPageState extends State<ReviewKostPage> {
     );
   }
 
-  // WIDGET CARD REVIEW
   Widget _buildReviewCard(ReviewModel review) {
     int starCount = int.tryParse(review.rating) ?? 5;
 
@@ -193,11 +220,7 @@ class _ReviewKostPageState extends State<ReviewKostPage> {
         color: cardColor,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 5)),
         ],
       ),
       child: Column(
@@ -206,51 +229,28 @@ class _ReviewKostPageState extends State<ReviewKostPage> {
           Row(
             children: [
               Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  shape: BoxShape.circle,
-                ),
+                width: 32, height: 32,
+                decoration: BoxDecoration(color: Colors.grey[300], shape: BoxShape.circle),
                 child: const Icon(Icons.person, size: 20, color: Colors.white),
               ),
               const SizedBox(width: 12),
               Text(
                 review.user?.nama ?? 'Pengguna Anonim', 
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
               ),
             ],
           ),
           const SizedBox(height: 8),
-          
           Row(
             children: List.generate(
               starCount, 
               (index) => const Icon(Icons.star, color: Color(0xFFEBC144), size: 18),
             ),
           ),
-          
           const SizedBox(height: 12),
-          Text(
-            review.komentar,
-            style: const TextStyle(
-              fontSize: 13,
-              color: Colors.black87,
-              height: 1.4,
-            ),
-          ),
+          Text(review.komentar, style: const TextStyle(fontSize: 13, color: Colors.black87, height: 1.4)),
           const SizedBox(height: 16),
-          Text(
-            review.tanggal,
-            style: TextStyle(
-              fontSize: 11,
-              color: Colors.grey[400],
-            ),
-          ),
+          Text(review.tanggal, style: TextStyle(fontSize: 11, color: Colors.grey[400])),
         ],
       ),
     );

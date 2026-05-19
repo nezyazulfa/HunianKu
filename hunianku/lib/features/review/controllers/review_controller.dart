@@ -76,4 +76,54 @@ class ReviewController {
       isLoading.value = false;
     }
   }
+
+  // Fungsi untuk mengedit ulasan yang sudah ada
+  Future<void> editReview(BuildContext context, String? idMongoReview, int ratingBaru, String komentarBaru) async {
+    if (idMongoReview == null) return;
+    
+    isLoading.value = true;
+    try {
+      await _reviewService.updateReviewRemote(idMongoReview, ratingBaru.toString(), komentarBaru);
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Ulasan berhasil diperbarui!'), backgroundColor: Colors.green),
+        );
+        Navigator.pop(context, true); 
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal memperbarui ulasan: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  // Fungsi untuk menghapus ulasan
+  Future<void> deleteReview(BuildContext context, String? idMongoReview) async {
+    if (idMongoReview == null) return;
+
+    isLoading.value = true;
+    try {
+      await _reviewService.deleteReviewRemote(idMongoReview);
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Ulasan berhasil dihapus!'), backgroundColor: Colors.green),
+        );
+        Navigator.pop(context, true); 
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal menghapus ulasan: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      isLoading.value = false;
+    }
+  }
 }

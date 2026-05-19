@@ -29,4 +29,33 @@ class ReviewService {
       throw Exception('Gagal menyimpan ulasan ke server: $e');
     }
   }
+
+  // Memperbarui ulasan yang sudah ada di MongoDB
+  Future<void> updateReviewRemote(String idMongo, String ratingBaru, String komentarBaru) async {
+    try {
+      final collection = await _mongo.getCollection(_collectionName);
+      
+      // Update data berdasarkan ObjectId dari MongoDB
+      await collection.updateOne(
+        where.id(ObjectId.fromHexString(idMongo)), 
+        modify
+          .set('rating', ratingBaru)
+          .set('komentar', komentarBaru)
+          .set('tanggal', '${DateTime.now().year}-${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')}')
+      );
+    } catch (e) {
+      throw Exception('Gagal memperbarui ulasan: $e');
+    }
+  }
+
+  // Menghapus ulasan dari MongoDB
+  Future<void> deleteReviewRemote(String idMongo) async {
+    try {
+      final collection = await _mongo.getCollection(_collectionName);
+      // Menghapus data berdasarkan ObjectId dari MongoDB
+      await collection.deleteOne(where.id(ObjectId.fromHexString(idMongo)));
+    } catch (e) {
+      throw Exception('Gagal menghapus ulasan: $e');
+    }
+  }
 }
