@@ -147,7 +147,7 @@ class _DetailKostPageState extends State<DetailKostPage> {
                       const SizedBox(height: 16),
                       _buildDetailItem('Lokasi:', widget.kost.lokasi),
                       const SizedBox(height: 16),
-                      _buildDetailItem('Harga:', 'Rp. ${widget.kost.harga}/bulan'),
+                      _buildDetailItem('Harga:', widget.kost.harga), 
                       const SizedBox(height: 16),
                       _buildDetailItem('Fasilitas:', widget.kost.daftarfasilitas),
                       const SizedBox(height: 16),

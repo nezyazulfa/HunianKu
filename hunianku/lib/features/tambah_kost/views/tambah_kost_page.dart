@@ -12,7 +12,7 @@ class AddKostPage extends StatefulWidget {
 
 class _AddKostPageState extends State<AddKostPage> {
   final TambahKostController _controller = TambahKostController();
-  // Controllers untuk text input
+  
   final TextEditingController _namaController = TextEditingController();
   final TextEditingController _deskripsiController = TextEditingController();
   final TextEditingController _alamatController = TextEditingController();
@@ -21,34 +21,20 @@ class _AddKostPageState extends State<AddKostPage> {
   final TextEditingController _hargaController = TextEditingController();
   final TextEditingController _kontakController = TextEditingController();
 
-  // State untuk radio/toggle button
-  String _selectedKategori = 'Campur'; 
-  String _selectedStatus = 'Full';
+  bool _isPutraSelected = false;
+  bool _isPutriSelected = false;
+
+  String _selectedPeriode = '/bulan';
+  final List<String> _periodeOptions = ['/bulan', '/semester', '/tahun'];
+
+  final String _selectedStatus = 'Tersedia';
   String _currentIdUser = '';
 
-  // Warna sesuai palet desain
   final Color backgroundColor = const Color(0xFFEFEBE1); 
   final Color cardColor = const Color(0x80FBFBF9); 
   final Color primaryGreen = const Color(0xFF4A6525);
   final Color primaryRed = const Color(0xFF6B1212); 
   final Color inputBackgroundColor = Colors.white;
-
-  KostModel _buatObjekKost() {
-    return KostModel(
-      // Buat ID sementara yang unik menggunakan timestamp (waktu saat ini)
-      idkost: 'K-${DateTime.now().millisecondsSinceEpoch}', 
-      iduser: _currentIdUser,
-      namakost: _namaController.text.trim(),
-      jenis: _selectedKategori,
-      alamat: _alamatController.text.trim(),
-      lokasi: _gmapsController.text.trim(),
-      harga: _hargaController.text.trim(),
-      kontak: _kontakController.text.trim(),
-      daftarfasilitas: _fasilitasController.text.trim(),
-      deskripsi: _deskripsiController.text.trim(),
-      status: _selectedStatus,
-    );
-  }
 
   @override
   void initState() {
@@ -75,54 +61,78 @@ class _AddKostPageState extends State<AddKostPage> {
     super.dispose();
   }
 
+  // --- LOGIKA MENGGABUNGKAN DATA KOST ---
+  KostModel _buatObjekKost() {
+    List<String> kategoriList = [];
+    if (_isPutraSelected) kategoriList.add('Putra');
+    if (_isPutriSelected) kategoriList.add('Putri');
+    String kategoriFinal = kategoriList.join(', ');
+    String hargaFinal = 'Rp${_hargaController.text.trim()}$_selectedPeriode';
+
+    return KostModel(
+      idkost: 'K-${DateTime.now().millisecondsSinceEpoch}', 
+      iduser: _currentIdUser,
+      namakost: _namaController.text.trim(),
+      jenis: kategoriFinal,
+      alamat: _alamatController.text.trim(),
+      lokasi: _gmapsController.text.trim(),
+      harga: hargaFinal,
+      kontak: _kontakController.text.trim(),
+      daftarfasilitas: _fasilitasController.text.trim(),
+      deskripsi: _deskripsiController.text.trim(),
+      status: _selectedStatus,
+    );
+  }
+
+  // --- LOGIKA VALIDASI SEMUA FIELD ---
+  bool _validasiInput() {
+    if (_namaController.text.trim().isEmpty ||
+        _deskripsiController.text.trim().isEmpty ||
+        _alamatController.text.trim().isEmpty ||
+        _gmapsController.text.trim().isEmpty ||
+        _fasilitasController.text.trim().isEmpty ||
+        _hargaController.text.trim().isEmpty ||
+        _kontakController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gagal: Semua kotak isian wajib diisi!'), backgroundColor: Colors.red),
+      );
+      return false;
+    }
+
+    if (!_isPutraSelected && !_isPutriSelected) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gagal: Pilih minimal satu Kategori (Putra atau Putri)!'), backgroundColor: Colors.red),
+      );
+      return false;
+    }
+
+    return true; 
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: backgroundColor,
-      // SafeArea agar aman dari notch/status bar
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
-          // Tambahkan bottom padding ekstra jika halaman ini akan digabung dengan Bottom Navigation Bar
           child: Column(
             children: [
-              // Card Container utama
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
                 decoration: BoxDecoration(
                   color: cardColor,
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 15,
-                      offset: const Offset(0, 5),
-                    ),
+                    BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 15, offset: const Offset(0, 5)),
                   ],
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Judul Form
-                    const Text(
-                      'Tambah Kost',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.black87,
-                      ),
-                    ),
+                    const Text('Tambah Kost', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Colors.black87)),
                     const SizedBox(height: 8),
-                    
-                    // Sub-judul
-                    const Text(
-                      'Isi detail untuk menambah kost anda',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.black54,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
+                    const Text('Isi detail untuk menambah kost anda', style: TextStyle(fontSize: 12, color: Colors.black54), textAlign: TextAlign.center),
                     const SizedBox(height: 24),
 
                     // --- KOTAK UPLOAD GAMBAR ---
@@ -140,118 +150,72 @@ class _AddKostPageState extends State<AddKostPage> {
                     const SizedBox(height: 16),
                     _buildTextField(controller: _fasilitasController, hintText: 'Fasilitas'),
                     const SizedBox(height: 16),
-                    _buildTextField(controller: _hargaController, hintText: 'Harga per Bulan', isNumeric: true),
+                    
+                    // --- INPUT HARGA DENGAN DROPDOWN ---
+                    _buildHargaField(),
                     const SizedBox(height: 16),
+                    
                     _buildTextField(controller: _kontakController, hintText: 'Contact Person', isNumeric: true),
                     const SizedBox(height: 24),
 
-                    // --- KATEGORI KOST ---
-                    const Text(
-                      'Kategori',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.black87),
-                    ),
+                    // --- KATEGORI KOST (MULTI-SELECT) ---
+                    const Text('Kategori', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.black87)),
                     const SizedBox(height: 12),
                     Row(
                       children: [
-                        _buildSelectionButton('Putra', _selectedKategori, (val) => setState(() => _selectedKategori = val)),
+                        _buildMultiSelectButton('Putra', _isPutraSelected, () => setState(() => _isPutraSelected = !_isPutraSelected)),
                         const SizedBox(width: 8),
-                        _buildSelectionButton('Putri', _selectedKategori, (val) => setState(() => _selectedKategori = val)),
-                        const SizedBox(width: 8),
-                        _buildSelectionButton('Campur', _selectedKategori, (val) => setState(() => _selectedKategori = val)),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-
-                    // --- STATUS KOST ---
-                    const Text(
-                      'Status',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.black87),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        _buildSelectionButton('Tersedia', _selectedStatus, (val) => setState(() => _selectedStatus = val)),
-                        const SizedBox(width: 12),
-                        _buildSelectionButton('Full', _selectedStatus, (val) => setState(() => _selectedStatus = val)),
+                        _buildMultiSelectButton('Putri', _isPutriSelected, () => setState(() => _isPutriSelected = !_isPutriSelected)),
                       ],
                     ),
                     const SizedBox(height: 32),
 
-                    // --- TOMBOL AKSI (Draf & Simpan) ---
+                    // --- TOMBOL AKSI ---
                     ValueListenableBuilder<bool>(
                       valueListenable: _controller.isLoading,
                       builder: (context, isLoading, child) {
                         if (isLoading) {
-                          return Center(
-                            child: CircularProgressIndicator(color: primaryGreen),
-                          );
+                          return Center(child: CircularProgressIndicator(color: primaryGreen));
                         }
-                    return Row(
-                      children: [
-                        // Tombol Draf (Outline)
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () {
-                              final kostDraft = _buatObjekKost();
-                              _controller.simpanKeDraf(context, kostDraft, () {
-                                _clearAllFields();
-                              });
-                            },
-                            style: OutlinedButton.styleFrom(
-                              side: BorderSide(color: primaryGreen, width: 1.5),
-                              minimumSize: const Size(0, 48),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
+                        return Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: () {
+                                  if (!_validasiInput()) return; 
+                                  final kostDraft = _buatObjekKost();
+                                  _controller.simpanKeDraf(context, kostDraft, _clearAllFields);
+                                },
+                                style: OutlinedButton.styleFrom(
+                                  side: BorderSide(color: primaryGreen, width: 1.5),
+                                  minimumSize: const Size(0, 48),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                ),
+                                child: Text('Draf', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: primaryGreen)),
                               ),
                             ),
-                            child: Text(
-                              'Draf',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: primaryGreen,
+                            const SizedBox(width: 16),
+                            
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  if (!_validasiInput()) return; 
+                                  final kostBaru = _buatObjekKost();
+                                  _controller.simpanKost(context, kostBaru, _clearAllFields);
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: primaryGreen,
+                                  foregroundColor: Colors.white,
+                                  minimumSize: const Size(0, 48),
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                ),
+                                child: const Text('Simpan', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
                               ),
                             ),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        
-                        // Tombol Simpan (Filled)
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () {
-                              if (_namaController.text.isEmpty) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Nama Kost wajib diisi!')),
-                                );
-                                return;
-                              }
-                              final kostBaru = _buatObjekKost();
-                              _controller.simpanKost(context, kostBaru, () {
-                                _clearAllFields();
-                              });
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: primaryGreen,
-                              foregroundColor: Colors.white,
-                              minimumSize: const Size(0, 48),
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                            ),
-                            child: const Text(
-                              'Simpan',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    );
-                    },
+                          ],
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -264,59 +228,6 @@ class _AddKostPageState extends State<AddKostPage> {
     );
   }
 
-  // WIDGET KOTAK UPLOAD FOTO
-  Widget _buildImageUploadBox() {
-    return InkWell(
-      onTap: () {
-        // TODO: Tambahkan logika ImagePicker di sini nanti
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Fitur upload foto segera hadir!')),
-        );
-      },
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        height: 160,
-        width: double.infinity,
-        decoration: BoxDecoration(
-          color: Colors.grey[200], // Warna abu-abu muda
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: Colors.grey.shade400,
-            width: 1.5,
-          ),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.add_photo_alternate_outlined,
-              size: 48,
-              color: Colors.grey[600],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Upload Foto Kost',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey[600],
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Format: JPG, PNG',
-              style: TextStyle(
-                fontSize: 11,
-                color: Colors.grey[500],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // Fungsi bantuan untuk membersihkan field (agar kode tidak kepanjangan di tombol simpan)
   void _clearAllFields() {
     _namaController.clear();
     _deskripsiController.clear();
@@ -325,19 +236,43 @@ class _AddKostPageState extends State<AddKostPage> {
     _fasilitasController.clear();
     _hargaController.clear();
     _kontakController.clear();
+    setState(() {
+      _isPutraSelected = false;
+      _isPutriSelected = false;
+      _selectedPeriode = '/bulan';
+    });
   }
 
-  // Widget bantuan untuk membuat Text Field yang seragam
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String hintText,
-    bool isNumeric = false,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: inputBackgroundColor,
-        borderRadius: BorderRadius.circular(16), 
+  Widget _buildImageUploadBox() {
+    return InkWell(
+      onTap: () {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Fitur upload foto segera hadir!')));
+      },
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        height: 160, width: double.infinity,
+        decoration: BoxDecoration(
+          color: Colors.grey[200],
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey.shade400, width: 1.5),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.add_photo_alternate_outlined, size: 48, color: Colors.grey[600]),
+            const SizedBox(height: 8),
+            Text('Upload Foto Kost', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.grey[600])),
+            const SizedBox(height: 4),
+            Text('Format: JPG, PNG', style: TextStyle(fontSize: 11, color: Colors.grey[500])),
+          ],
+        ),
       ),
+    );
+  }
+
+  Widget _buildTextField({required TextEditingController controller, required String hintText, bool isNumeric = false}) {
+    return Container(
+      decoration: BoxDecoration(color: inputBackgroundColor, borderRadius: BorderRadius.circular(16)),
       child: TextField(
         controller: controller,
         keyboardType: isNumeric ? TextInputType.number : TextInputType.text,
@@ -352,31 +287,89 @@ class _AddKostPageState extends State<AddKostPage> {
     );
   }
 
-  // Widget bantuan untuk membuat tombol Kategori & Status (Bisa Outline / Filled)
-  Widget _buildSelectionButton(String title, String groupValue, Function(String) onSelect) {
-    bool isSelected = title == groupValue;
+  Widget _buildHargaField() {
+    return Container(
+      decoration: BoxDecoration(color: inputBackgroundColor, borderRadius: BorderRadius.circular(16)),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _hargaController,
+              keyboardType: TextInputType.number,
+              style: const TextStyle(fontSize: 14),
+              onChanged: (value) {
+                String numericOnly = value.replaceAll(RegExp(r'[^0-9]'), '');
+                if (numericOnly.isEmpty) {
+                  _hargaController.clear();
+                  return;
+                }
+                
+                String formatted = '';
+                int count = 0;
+                for (int i = numericOnly.length - 1; i >= 0; i--) {
+                  if (count != 0 && count % 3 == 0) {
+                    formatted = '.$formatted';
+                  }
+                  formatted = numericOnly[i] + formatted;
+                  count++;
+                }
+                
+                _hargaController.value = TextEditingValue(
+                  text: formatted,
+                  selection: TextSelection.collapsed(offset: formatted.length),
+                );
+              },
+              decoration: InputDecoration(
+                prefixText: 'Rp ',
+                prefixStyle: const TextStyle(color: Colors.black87, fontSize: 14),
+                hintText: 'Harga',
+                hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 13),
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              ),
+            ),
+          ),
+          Container(height: 24, width: 1, color: Colors.grey.shade300), 
+          Padding(
+            padding: const EdgeInsets.only(left: 8, right: 16),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: _selectedPeriode,
+                icon: const Icon(Icons.keyboard_arrow_down, color: Colors.black54),
+                items: _periodeOptions.map((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value, style: const TextStyle(fontSize: 13, color: Colors.black87)),
+                  );
+                }).toList(),
+                onChanged: (newValue) {
+                  setState(() {
+                    _selectedPeriode = newValue!;
+                  });
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
+  Widget _buildMultiSelectButton(String title, bool isSelected, VoidCallback onTap) {
     return Expanded(
       child: GestureDetector(
-        onTap: () => onSelect(title),
+        onTap: onTap,
         child: Container(
           height: 40,
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: isSelected ? primaryRed : Colors.white,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: primaryRed,
-              width: 1.2,
-            ),
+            border: Border.all(color: primaryRed, width: 1.2),
           ),
           child: Text(
             title,
-            style: TextStyle(
-              color: isSelected ? Colors.white : primaryRed,
-              fontWeight: FontWeight.bold,
-              fontSize: 13,
-            ),
+            style: TextStyle(color: isSelected ? Colors.white : primaryRed, fontWeight: FontWeight.bold, fontSize: 13),
           ),
         ),
       ),
