@@ -1,17 +1,41 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:hunianku/features/dashboard/model/kost_model.dart';
 import 'package:hunianku/services/kost_service.dart';
+import 'package:hunianku/services/storage_service.dart';
 
 class TambahKostController {
   final KostService _kostService = KostService();
+  final StorageService _storageService = StorageService();
   final ValueNotifier<bool> isLoading = ValueNotifier<bool>(false);
 
   // LOGIKA TOMBOL "SIMPAN"
-  Future<void> simpanKost(BuildContext context, KostModel kost, VoidCallback onSuccess) async {
+  Future<void> simpanKost(BuildContext context, KostModel kost, List<File> imageFiles, VoidCallback onSuccess) async {
     isLoading.value = true;
     try {
+      List<String> linkFotoHasilUpload = [];
+      if (imageFiles.isNotEmpty) {
+        linkFotoHasilUpload = await _storageService.uploadBanyakFoto(imageFiles);
+      }
+      // memasukan link foto
+      final KostModel kostSiapSimpan = KostModel(
+        id: kost.id,
+        idkost: kost.idkost,
+        iduser: kost.iduser,
+        namakost: kost.namakost,
+        jenis: kost.jenis,
+        alamat: kost.alamat,
+        lokasi: kost.lokasi,
+        harga: kost.harga,
+        kontak: kost.kontak,
+        daftarfasilitas: kost.daftarfasilitas,
+        deskripsi: kost.deskripsi,
+        status: kost.status,
+        daftarFoto: linkFotoHasilUpload,
+      );
+
       // Mencoba koneksi dan menyimpan ke MongoDB Atlas
-      await _kostService.simpanKostRemote(kost);
+      await _kostService.simpanKostRemote(kostSiapSimpan);
       
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -257,7 +257,7 @@ class _AddKostPageState extends State<AddKostPage> {
                                     return;
                                   }
                                   final kostBaru = _buatObjekKost();
-                                  _controller.simpanKost(context, kostBaru, () {
+                                  _controller.simpanKost(context, kostBaru, _imageFiles, () {
                                     _clearAllFields();
                                   });
                                 },
