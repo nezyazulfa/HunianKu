@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:hunianku/features/dashboard/model/kost_model.dart';
 import 'package:hunianku/features/kost_ku/controllers/kost_ku_controller.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:hunianku/features/tambah_kost/views/map_picker_page.dart';
 
 class EditKostPage extends StatefulWidget {
   final KostModel kostData; 
@@ -34,7 +36,6 @@ class _EditKostPageState extends State<EditKostPage> {
   @override
   void initState() {
     super.initState();
-    // Isi field dengan data dari MongoDB
     _namaController = TextEditingController(text: widget.kostData.namakost);
     _deskripsiController = TextEditingController(text: widget.kostData.deskripsi);
     _alamatController = TextEditingController(text: widget.kostData.alamat);
@@ -59,7 +60,6 @@ class _EditKostPageState extends State<EditKostPage> {
     super.dispose();
   }
 
-  // Fungsi untuk mengompilasi data form ke dalam objek KostModel baru (untuk Update)
   KostModel _buatObjekUpdate() {
     return KostModel(
       id: widget.kostData.id, 
@@ -93,10 +93,7 @@ class _EditKostPageState extends State<EditKostPage> {
         padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
         child: Container(
           padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: cardColor,
-            borderRadius: BorderRadius.circular(24),
-          ),
+          decoration: BoxDecoration(color: cardColor, borderRadius: BorderRadius.circular(24)),
           child: Column(
             children: [
               const Text('Edit Kost', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
@@ -107,8 +104,65 @@ class _EditKostPageState extends State<EditKostPage> {
               const SizedBox(height: 16),
               _buildTextField(controller: _alamatController, hintText: 'Alamat'),
               const SizedBox(height: 16),
-              _buildTextField(controller: _gmapsController, hintText: 'Link Gmaps'),
+
+              // --- GANTI TEXTFIELD GMAPS DENGAN TOMBOL PETA ---
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.location_on, color: Colors.redAccent),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        _gmapsController.text.isEmpty 
+                            ? 'Lokasi Peta Belum Dipilih' 
+                            : 'Titik Lokasi Tersimpan',
+                        style: TextStyle(
+                          color: _gmapsController.text.isEmpty ? Colors.grey.shade500 : Colors.black87,
+                          fontSize: 14,
+                          fontWeight: _gmapsController.text.isEmpty ? FontWeight.normal : FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed: () async {
+                        LatLng? initial;
+                        if (_gmapsController.text.isNotEmpty) {
+                          final parts = _gmapsController.text.split(',');
+                          if (parts.length == 2) {
+                            try {
+                              initial = LatLng(double.parse(parts[0].trim()), double.parse(parts[1].trim()));
+                            } catch (_) {}
+                          }
+                        }
+
+                        final LatLng? picked = await Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => MapPickerPage(initialLocation: initial)),
+                        );
+
+                        if (picked != null) {
+                          setState(() {
+                            _gmapsController.text = '${picked.latitude},${picked.longitude}';
+                          });
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFEFEBE1),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      child: const Text('Buka Peta', style: TextStyle(color: Colors.black87)),
+                    ),
+                  ],
+                ),
+              ),
               const SizedBox(height: 16),
+
               _buildTextField(controller: _fasilitasController, hintText: 'Fasilitas'),
               const SizedBox(height: 16),
               _buildTextField(controller: _hargaController, hintText: 'Harga per Bulan'),
@@ -116,7 +170,6 @@ class _EditKostPageState extends State<EditKostPage> {
               _buildTextField(controller: _kontakController, hintText: 'Contact Person'),
               const SizedBox(height: 24),
 
-              // --- KATEGORI KOST ---
               const Text('Kategori', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.black87)),
               const SizedBox(height: 12),
               Row(
@@ -130,7 +183,6 @@ class _EditKostPageState extends State<EditKostPage> {
               ),
               const SizedBox(height: 20),
 
-              // --- STATUS KOST ---
               const Text('Status', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.black87)),
               const SizedBox(height: 12),
               Row(
@@ -142,13 +194,10 @@ class _EditKostPageState extends State<EditKostPage> {
               ),
               const SizedBox(height: 32),
               
-              // --- TOMBOL AKSI ---
               ValueListenableBuilder<bool>(
                 valueListenable: _controller.isLoading,
                 builder: (context, isLoading, child) {
-                  if (isLoading) {
-                    return Center(child: CircularProgressIndicator(color: primaryGreen));
-                  }
+                  if (isLoading) return Center(child: CircularProgressIndicator(color: primaryGreen));
                   return Row(
                     children: [
                       Expanded(
@@ -209,13 +258,11 @@ class _EditKostPageState extends State<EditKostPage> {
 
   Widget _buildSelectionButton(String title, String groupValue, Function(String) onSelect) {
     bool isSelected = title == groupValue;
-
     return Expanded(
       child: GestureDetector(
         onTap: () => onSelect(title),
         child: Container(
-          height: 40,
-          alignment: Alignment.center,
+          height: 40, alignment: Alignment.center,
           decoration: BoxDecoration(
             color: isSelected ? primaryRed : Colors.white,
             borderRadius: BorderRadius.circular(20),
@@ -223,11 +270,7 @@ class _EditKostPageState extends State<EditKostPage> {
           ),
           child: Text(
             title,
-            style: TextStyle(
-              color: isSelected ? Colors.white : primaryRed,
-              fontWeight: FontWeight.bold,
-              fontSize: 13,
-            ),
+            style: TextStyle(color: isSelected ? Colors.white : primaryRed, fontWeight: FontWeight.bold, fontSize: 13),
           ),
         ),
       ),

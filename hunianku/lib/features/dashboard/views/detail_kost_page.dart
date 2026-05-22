@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:hunianku/features/dashboard/model/kost_model.dart';
 import 'package:hunianku/features/bookmark/controllers/bookmark_controller.dart'; 
 import 'package:hunianku/services/session_service.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class DetailKostPage extends StatefulWidget {
   final KostModel kost;
@@ -107,7 +109,7 @@ class _DetailKostPageState extends State<DetailKostPage> {
                         }
                       ),
 
-                    // --- SPACER KOSONG JIKA PEMILIK (AGAR JUDUL TETAP DI TENGAH) ---
+                    // --- SPACER KOSONG JIKA PEMILIK ---
                     if (_userRole == 'pemilik')
                       const SizedBox(width: 48),
                   ],
@@ -145,7 +147,10 @@ class _DetailKostPageState extends State<DetailKostPage> {
                       const SizedBox(height: 16),
                       _buildDetailItem('Alamat:', widget.kost.alamat),
                       const SizedBox(height: 16),
-                      _buildDetailItem('Lokasi:', widget.kost.lokasi),
+                      
+                      // --- MEMANGGIL WIDGET MAP PREVIEW ---
+                      _buildMapPreview('Lokasi:', widget.kost.lokasi),
+                      
                       const SizedBox(height: 16),
                       _buildDetailItem('Harga:', 'Rp. ${widget.kost.harga}/bulan'),
                       const SizedBox(height: 16),
@@ -166,6 +171,7 @@ class _DetailKostPageState extends State<DetailKostPage> {
     );
   }
 
+  // WIDGET BIASA (UNTUK TEKS)
   Widget _buildDetailItem(String title, String content) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -179,6 +185,93 @@ class _DetailKostPageState extends State<DetailKostPage> {
           content,
           style: const TextStyle(fontSize: 14, color: Colors.black87, height: 1.4),
         ),
+      ],
+    );
+  }
+
+  // --- WIDGET BARU KHUSUS UNTUK PREVIEW PETA (BISA DIKLIK) ---
+  Widget _buildMapPreview(String title, String locString) {
+    LatLng? location;
+    
+    // Pecah teks "lat,lng" menjadi koordinat asli
+    try {
+      final parts = locString.split(',');
+      if (parts.length == 2) {
+        location = LatLng(double.parse(parts[0].trim()), double.parse(parts[1].trim()));
+      }
+    } catch (e) {
+      location = null;
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87),
+        ),
+        const SizedBox(height: 8),
+        
+        // Cek apakah koordinat valid
+        if (location == null) 
+          const Text('Lokasi belum diatur', style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic))
+        else
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Kotak Peta Mini
+              Container(
+                height: 200, 
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.grey.shade300),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: GoogleMap(
+                    initialCameraPosition: CameraPosition(
+                      target: location,
+                      zoom: 16,
+                    ),
+                    // Matikan gestur agar peta preview tidak bergeser saat layar di-scroll
+                    zoomControlsEnabled: false,
+                    scrollGesturesEnabled: false,
+                    markers: {
+                      Marker(
+                        markerId: const MarkerId('kost-location'),
+                        position: location,
+                      ),
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              
+              // Tombol untuk membuka di aplikasi Google Maps
+              OutlinedButton.icon(
+                onPressed: () async {
+                  // Membuat URL format pencarian Google Maps berdasarkan koordinat
+                  final url = Uri.parse('https://www.google.com/maps/search/?api=1&query=${location!.latitude},${location.longitude}');
+                  
+                  // Perintah membuka aplikasi eksternal
+                  if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Tidak dapat membuka Google Maps'), backgroundColor: Colors.red),
+                      );
+                    }
+                  }
+                },
+                icon: const Icon(Icons.open_in_new, size: 16, color: Color(0xFF4A6525)), 
+                label: const Text('Buka di Google Maps', style: TextStyle(color: Color(0xFF4A6525), fontWeight: FontWeight.bold)),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Color(0xFF4A6525)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ],
+          ),
       ],
     );
   }

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:hunianku/features/dashboard/model/kost_model.dart';
 import 'package:hunianku/features/tambah_kost/controllers/tambah_kost_controller.dart';
 import 'package:hunianku/services/session_service.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:hunianku/features/tambah_kost/views/map_picker_page.dart';
 
 class AddKostPage extends StatefulWidget {
   const AddKostPage({super.key});
@@ -79,14 +81,11 @@ class _AddKostPageState extends State<AddKostPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: backgroundColor,
-      // SafeArea agar aman dari notch/status bar
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
-          // Tambahkan bottom padding ekstra jika halaman ini akan digabung dengan Bottom Navigation Bar
           child: Column(
             children: [
-              // Card Container utama
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
                 decoration: BoxDecoration(
@@ -103,24 +102,14 @@ class _AddKostPageState extends State<AddKostPage> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Judul Form
                     const Text(
                       'Tambah Kost',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.black87,
-                      ),
+                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Colors.black87),
                     ),
                     const SizedBox(height: 8),
-                    
-                    // Sub-judul
                     const Text(
                       'Isi detail untuk menambah kost anda',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.black54,
-                      ),
+                      style: TextStyle(fontSize: 12, color: Colors.black54),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 24),
@@ -132,8 +121,68 @@ class _AddKostPageState extends State<AddKostPage> {
                     const SizedBox(height: 16),
                     _buildTextField(controller: _alamatController, hintText: 'Alamat'),
                     const SizedBox(height: 16),
-                    _buildTextField(controller: _gmapsController, hintText: 'Link Gmaps'),
+                    
+                    // --- GANTI TEXTFIELD GMAPS DENGAN TOMBOL PETA ---
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: inputBackgroundColor,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.location_on, color: Colors.redAccent),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              _gmapsController.text.isEmpty 
+                                  ? 'Lokasi Peta Belum Dipilih' 
+                                  : 'Titik Lokasi Tersimpan',
+                              style: TextStyle(
+                                color: _gmapsController.text.isEmpty ? Colors.grey.shade500 : Colors.black87,
+                                fontSize: 14,
+                                fontWeight: _gmapsController.text.isEmpty ? FontWeight.normal : FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          ElevatedButton(
+                            onPressed: () async {
+                              // Parsing lokasi awal jika sudah ada
+                              LatLng? initial;
+                              if (_gmapsController.text.isNotEmpty) {
+                                final parts = _gmapsController.text.split(',');
+                                if (parts.length == 2) {
+                                  try {
+                                    initial = LatLng(double.parse(parts[0].trim()), double.parse(parts[1].trim()));
+                                  } catch (_) {}
+                                }
+                              }
+
+                              // Buka Map Picker
+                              final LatLng? picked = await Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => MapPickerPage(initialLocation: initial)),
+                              );
+
+                              // Simpan hasil
+                              if (picked != null) {
+                                setState(() {
+                                  _gmapsController.text = '${picked.latitude},${picked.longitude}';
+                                });
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFEFEBE1),
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
+                            child: const Text('Buka Peta', style: TextStyle(color: Colors.black87)),
+                          ),
+                        ],
+                      ),
+                    ),
                     const SizedBox(height: 16),
+
                     _buildTextField(controller: _fasilitasController, hintText: 'Fasilitas'),
                     const SizedBox(height: 16),
                     _buildTextField(controller: _hargaController, hintText: 'Harga per Bulan', isNumeric: true),
@@ -142,10 +191,7 @@ class _AddKostPageState extends State<AddKostPage> {
                     const SizedBox(height: 24),
 
                     // --- KATEGORI KOST ---
-                    const Text(
-                      'Kategori',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.black87),
-                    ),
+                    const Text('Kategori', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.black87)),
                     const SizedBox(height: 12),
                     Row(
                       children: [
@@ -159,10 +205,7 @@ class _AddKostPageState extends State<AddKostPage> {
                     const SizedBox(height: 20),
 
                     // --- STATUS KOST ---
-                    const Text(
-                      'Status',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.black87),
-                    ),
+                    const Text('Status', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.black87)),
                     const SizedBox(height: 12),
                     Row(
                       children: [
@@ -173,95 +216,59 @@ class _AddKostPageState extends State<AddKostPage> {
                     ),
                     const SizedBox(height: 32),
 
-                    // --- TOMBOL AKSI (Draf & Simpan) ---
+                    // --- TOMBOL AKSI ---
                     ValueListenableBuilder<bool>(
                       valueListenable: _controller.isLoading,
                       builder: (context, isLoading, child) {
                         if (isLoading) {
-                          return Center(
-                            child: CircularProgressIndicator(color: primaryGreen),
-                          );
+                          return Center(child: CircularProgressIndicator(color: primaryGreen));
                         }
-                    return Row(
-                      children: [
-                        // Tombol Draf (Outline)
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () {
-                              final kostDraft = _buatObjekKost();
-                              _controller.simpanKeDraf(context, kostDraft, () {
-                                // Fungsi ini akan dipanggil otomatis oleh controller saat sukses
-                                _namaController.clear();
-                                _deskripsiController.clear();
-                                _alamatController.clear();
-                                _gmapsController.clear();
-                                _fasilitasController.clear();
-                                _hargaController.clear();
-                                _kontakController.clear();
-                              });
-                            },
-                            style: OutlinedButton.styleFrom(
-                              side: BorderSide(color: primaryGreen, width: 1.5),
-                              minimumSize: const Size(0, 48),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
+                        return Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: () {
+                                  final kostDraft = _buatObjekKost();
+                                  _controller.simpanKeDraf(context, kostDraft, () {
+                                    _namaController.clear(); _deskripsiController.clear();
+                                    _alamatController.clear(); _gmapsController.clear();
+                                    _fasilitasController.clear(); _hargaController.clear(); _kontakController.clear();
+                                  });
+                                },
+                                style: OutlinedButton.styleFrom(
+                                  side: BorderSide(color: primaryGreen, width: 1.5),
+                                  minimumSize: const Size(0, 48),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                ),
+                                child: Text('Draf', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: primaryGreen)),
                               ),
                             ),
-                            child: Text(
-                              'Draf',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: primaryGreen,
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  if (_namaController.text.isEmpty) {
+                                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Nama Kost wajib diisi!')));
+                                    return;
+                                  }
+                                  final kostBaru = _buatObjekKost();
+                                  _controller.simpanKost(context, kostBaru, () {
+                                    _namaController.clear(); _deskripsiController.clear();
+                                    _alamatController.clear(); _gmapsController.clear();
+                                    _fasilitasController.clear(); _hargaController.clear(); _kontakController.clear();
+                                  });
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: primaryGreen, foregroundColor: Colors.white,
+                                  minimumSize: const Size(0, 48), elevation: 0,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                ),
+                                child: const Text('Simpan', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
                               ),
                             ),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        
-                        // Tombol Simpan (Filled)
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () {
-                              if (_namaController.text.isEmpty) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Nama Kost wajib diisi!')),
-                                );
-                                return;
-                              }
-                              final kostBaru = _buatObjekKost();
-                              _controller.simpanKost(context, kostBaru, () {
-                                // Fungsi ini akan dipanggil otomatis oleh controller saat sukses
-                                _namaController.clear();
-                                _deskripsiController.clear();
-                                _alamatController.clear();
-                                _gmapsController.clear();
-                                _fasilitasController.clear();
-                                _hargaController.clear();
-                                _kontakController.clear();
-                              });
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: primaryGreen,
-                              foregroundColor: Colors.white,
-                              minimumSize: const Size(0, 48),
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                            ),
-                            child: const Text(
-                              'Simpan',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    );
-                    },
+                          ],
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -274,17 +281,9 @@ class _AddKostPageState extends State<AddKostPage> {
     );
   }
 
-  // Widget bantuan untuk membuat Text Field yang seragam
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String hintText,
-    bool isNumeric = false,
-  }) {
+  Widget _buildTextField({required TextEditingController controller, required String hintText, bool isNumeric = false}) {
     return Container(
-      decoration: BoxDecoration(
-        color: inputBackgroundColor,
-        borderRadius: BorderRadius.circular(16), 
-      ),
+      decoration: BoxDecoration(color: inputBackgroundColor, borderRadius: BorderRadius.circular(16)),
       child: TextField(
         controller: controller,
         keyboardType: isNumeric ? TextInputType.number : TextInputType.text,
@@ -299,31 +298,21 @@ class _AddKostPageState extends State<AddKostPage> {
     );
   }
 
-  // Widget bantuan untuk membuat tombol Kategori & Status (Bisa Outline / Filled)
   Widget _buildSelectionButton(String title, String groupValue, Function(String) onSelect) {
     bool isSelected = title == groupValue;
-
     return Expanded(
       child: GestureDetector(
         onTap: () => onSelect(title),
         child: Container(
-          height: 40,
-          alignment: Alignment.center,
+          height: 40, alignment: Alignment.center,
           decoration: BoxDecoration(
             color: isSelected ? primaryRed : Colors.white,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: primaryRed,
-              width: 1.2,
-            ),
+            border: Border.all(color: primaryRed, width: 1.2),
           ),
           child: Text(
             title,
-            style: TextStyle(
-              color: isSelected ? Colors.white : primaryRed,
-              fontWeight: FontWeight.bold,
-              fontSize: 13,
-            ),
+            style: TextStyle(color: isSelected ? Colors.white : primaryRed, fontWeight: FontWeight.bold, fontSize: 13),
           ),
         ),
       ),
