@@ -9,6 +9,7 @@ import 'package:hunianku/features/note/model/note_model.dart';
 import 'package:hunianku/services/kost_service.dart';
 import 'package:hunianku/services/session_service.dart';
 import 'package:hunianku/helpers/pcd_helper.dart';
+import 'package:hunianku/features/tambah_kost/views/scan_fasilitas_page.dart'; 
 
 class TambahNotePage extends StatefulWidget {
   const TambahNotePage({super.key});
@@ -161,6 +162,25 @@ class _TambahNotePageState extends State<TambahNotePage> {
     );
   }
 
+  Future<void> _bukaPemindaiFasilitas() async {
+    final List<String>? hasilScan = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const ScanFasilitasPage()),
+    );
+    
+    if (hasilScan != null && hasilScan.isNotEmpty) {
+      setState(() {
+        String fasilitasBaru = hasilScan.join(', ');
+        String teksFormat = "Daftar fasilitas : $fasilitasBaru";
+        if (_noteController.text.isEmpty) {
+          _noteController.text = teksFormat;
+        } else {
+          _noteController.text += '\n\n$teksFormat';
+        }
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -229,7 +249,30 @@ class _TambahNotePageState extends State<TambahNotePage> {
                           // --- KOTAK GAMBAR / UPLOAD ---
                           _buildImageSection(),
                           const SizedBox(height: 16),
-                          
+
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Scan Fasilitas Kost',
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black87),
+                              ),
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: primaryGreen.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: IconButton(
+                                  icon: const Icon(Icons.document_scanner_rounded, size: 20),
+                                  color: primaryGreen,
+                                  onPressed: _bukaPemindaiFasilitas,
+                                  tooltip: 'Scan Fasilitas Kost',
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 5),
+
                           Expanded(
                             child: TextField(
                               controller: _noteController,

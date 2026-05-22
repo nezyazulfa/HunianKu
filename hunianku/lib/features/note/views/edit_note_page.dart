@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hunianku/features/note/model/note_model.dart';
 import 'package:hunianku/features/note/controllers/note_controller.dart';
-
+import 'package:hunianku/features/tambah_kost/views/scan_fasilitas_page.dart';
 class EditNotePage extends StatefulWidget {
   final NoteModel noteData;
   final NoteController controller;
@@ -31,6 +31,25 @@ class _EditNotePageState extends State<EditNotePage> {
   void dispose() {
     _noteController.dispose();
     super.dispose();
+  }
+
+  Future<void> _bukaPemindaiFasilitas() async {
+    final List<String>? hasilScan = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const ScanFasilitasPage()),
+    );
+
+    if (hasilScan != null && hasilScan.isNotEmpty) {
+      setState(() {
+        String fasilitasTerdeteksi = hasilScan.join(', ');
+        String teksFormat = "Daftar fasilitas : $fasilitasTerdeteksi";
+        if (_noteController.text.isEmpty) {
+          _noteController.text = teksFormat;
+        } else {
+          _noteController.text += '\n\n$teksFormat';
+        }
+      });
+    }
   }
 
   @override
@@ -66,7 +85,7 @@ class _EditNotePageState extends State<EditNotePage> {
               ),
             ),
             const SizedBox(height: 16),
-
+            
             // --- KONTEN UTAMA (Latar Putih Tulang Melengkung) ---
             Expanded(
               child: Container(
@@ -109,7 +128,28 @@ class _EditNotePageState extends State<EditNotePage> {
                               ),
                             ),
                             const SizedBox(height: 16),
-                            
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  'Scan Fasilitas Kost',
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black87),
+                                ),
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: primaryGreen.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: IconButton(
+                                    icon: const Icon(Icons.document_scanner_rounded, size: 20),
+                                    color: primaryGreen,
+                                    onPressed: _bukaPemindaiFasilitas,
+                                    tooltip: 'Scan Tambahan Fasilitas',
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
                             // Field Edit Isi Catatan
                             Expanded(
                               child: TextField(

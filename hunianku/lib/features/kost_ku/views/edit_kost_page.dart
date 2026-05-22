@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hunianku/features/dashboard/model/kost_model.dart';
 import 'package:hunianku/features/kost_ku/controllers/kost_ku_controller.dart';
+import 'package:hunianku/features/tambah_kost/views/scan_fasilitas_page.dart';
 
 class EditKostPage extends StatefulWidget {
   final KostModel kostData; 
@@ -81,6 +82,24 @@ class _EditKostPageState extends State<EditKostPage> {
     _hargaController.dispose();
     _kontakController.dispose();
     super.dispose();
+  }
+
+  Future<void> _bukaPemindaiFasilitas() async {
+    final List<String>? hasilScan = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const ScanFasilitasPage()),
+    );
+    
+    if (hasilScan != null && hasilScan.isNotEmpty) {
+      setState(() {
+        String fasilitasBaru = hasilScan.join(', ');
+        if (_fasilitasController.text.isEmpty) {
+          _fasilitasController.text = fasilitasBaru;
+        } else {
+          _fasilitasController.text += ', $fasilitasBaru';
+        }
+      });
+    }
   }
 
   // --- LOGIKA MENGGABUNGKAN DATA UNTUK UPDATE ---
@@ -176,7 +195,26 @@ class _EditKostPageState extends State<EditKostPage> {
               const SizedBox(height: 16),
               _buildTextField(controller: _gmapsController, hintText: 'Link Gmaps'),
               const SizedBox(height: 16),
-              _buildTextField(controller: _fasilitasController, hintText: 'Fasilitas'),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildTextField(controller: _fasilitasController, hintText: 'Fasilitas'),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: primaryGreen.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.document_scanner_rounded),
+                      color: primaryGreen,
+                      onPressed: _bukaPemindaiFasilitas,
+                      tooltip: 'Scan Fasilitas Kamar',
+                    ),
+                  )
+                ],
+              ),
               const SizedBox(height: 16),
               _buildHargaField(),
               const SizedBox(height: 16),
