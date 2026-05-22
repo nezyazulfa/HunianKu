@@ -57,22 +57,23 @@ class _ScanFasilitasPageState extends State<ScanFasilitasPage>
         return Scaffold(
           body: Stack(
             children: [
-              Positioned.fill(
-                child: Container(
-                  color: Colors.black,
-                  child: ClipRect(
-                    child: OverflowBox(
-                      alignment: Alignment.topCenter,
-                      child: FittedBox(
-                        fit: BoxFit.cover,
-                        child: SizedBox(
-                          width: _controller.cameraController!.value.previewSize!.height,
-                          height: _controller.cameraController!.value.previewSize!.width,
-                          child: CameraPreview(_controller.cameraController!),
+              Positioned(
+                top: 0, left: 0, right: 0,
+                child: AspectRatio(
+                  aspectRatio: 3 / 4,
+                  child: Container(
+                    color: Colors.black,
+                    child: ClipRect(
+                        child: FittedBox(
+                          fit: BoxFit.cover,
+                          child: SizedBox(
+                            width: _controller.cameraController!.value.previewSize!.height,
+                            height: _controller.cameraController!.value.previewSize!.width,
+                            child: CameraPreview(_controller.cameraController!),
+                          ),
                         ),
                       ),
                     ),
-                  ),
                 ),
               ),
               ..._buildBoundingBoxes(size),
@@ -123,14 +124,10 @@ class _ScanFasilitasPageState extends State<ScanFasilitasPage>
 
   List<Widget> _buildBoundingBoxes(Size screenSize) {
     if (_controller.yoloResults.isEmpty) return [];
-
-    double factorX =
-        screenSize.width /
-        _controller.cameraController!.value.previewSize!.height;
-    double factorY =
-        screenSize.height /
-        _controller.cameraController!.value.previewSize!.width;
-
+    double previewWidth = screenSize.width;
+    double previewHeight = screenSize.width * (4 / 3);
+    double factorX = previewWidth / _controller.cameraController!.value.previewSize!.height;
+    double factorY = previewHeight / _controller.cameraController!.value.previewSize!.width;
     return _controller.yoloResults
         .where((res) => _controller.targetClasses.containsKey(res['tag']))
         .map((res) {

@@ -279,7 +279,7 @@ class _AddKostPageState extends State<AddKostPage> {
                         )
                       ],
                     ),
-                    
+                    const SizedBox(height: 16),
                     // --- INPUT HARGA DENGAN DROPDOWN ---
                     _buildHargaField(),
                     const SizedBox(height: 16),

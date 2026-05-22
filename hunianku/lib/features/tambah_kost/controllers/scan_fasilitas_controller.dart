@@ -116,8 +116,12 @@ class ScanFasilitasController extends ChangeNotifier {
 
   // Fungsi Pembersihan
   void disposeController() {
+    isDetecting = true;
+    if (cameraController != null && cameraController!.value.isStreamingImages) {
+      cameraController!.stopImageStream();
+    }
     cameraController?.dispose();
-    vision.closeYoloModel();
+    //vision.closeYoloModel();
     dispose();
   }
 }
