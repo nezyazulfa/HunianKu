@@ -21,7 +21,7 @@ class TambahKostController {
       final KostModel kostSiapSimpan = KostModel(
         id: kost.id,
         idkost: kost.idkost,
-        iduser: kost.iduser,
+        user: kost.user,
         namakost: kost.namakost,
         jenis: kost.jenis,
         alamat: kost.alamat,

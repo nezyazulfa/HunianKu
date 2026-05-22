@@ -114,7 +114,7 @@ class _EditKostPageState extends State<EditKostPage> {
     return KostModel(
       id: widget.kostData.id, 
       idkost: widget.kostData.idkost, 
-      iduser: widget.kostData.iduser, 
+      user: widget.kostData.user, 
       namakost: _namaController.text.trim(),
       jenis: kategoriFinal,
       alamat: _alamatController.text.trim(),

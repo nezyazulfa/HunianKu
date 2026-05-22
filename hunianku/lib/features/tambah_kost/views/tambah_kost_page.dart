@@ -7,6 +7,7 @@ import 'package:hunianku/services/session_service.dart';
 import 'package:hunianku/helpers/pcd_helper.dart'; 
 import 'package:flutter/foundation.dart';
 import 'package:hunianku/features/tambah_kost/views/scan_fasilitas_page.dart'; 
+import 'package:hunianku/features/auth/model/user_model.dart';
 
 class AddKostPage extends StatefulWidget {
   const AddKostPage({super.key});
@@ -33,7 +34,8 @@ class _AddKostPageState extends State<AddKostPage> {
   final List<String> _periodeOptions = ['/bulan', '/semester', '/tahun'];
 
   final String _selectedStatus = 'Tersedia';
-  String _currentIdUser = '';
+  //String _currentIdUser = '';
+  UserModel? _currentUser;
 
   List<File> _imageFiles = [];
   final ImagePicker _picker = ImagePicker();
@@ -148,9 +150,19 @@ class _AddKostPageState extends State<AddKostPage> {
 
   Future<void> _loadPemilikId() async {
     final id = await SessionService.getIdUser();
-    setState(() {
-      _currentIdUser = id ?? '';
-    });
+    final nama = await SessionService.getNama();
+    final role = await SessionService.getRole();
+    if (id != null) {
+      setState(() {
+        _currentUser = UserModel(
+          iduser: id,
+          nama: nama ?? 'Pemilik',
+          email: '', 
+          password: '', 
+          role: role ?? 'pemilik'
+        );
+      });
+    }
   }
 
   @override
@@ -175,7 +187,7 @@ class _AddKostPageState extends State<AddKostPage> {
 
     return KostModel(
       idkost: 'K-${DateTime.now().millisecondsSinceEpoch}', 
-      iduser: _currentIdUser,
+      user: _currentUser,
       namakost: _namaController.text.trim(),
       jenis: kategoriFinal,
       alamat: _alamatController.text.trim(),

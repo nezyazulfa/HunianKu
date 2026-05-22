@@ -1,5 +1,6 @@
 import 'package:hive/hive.dart';
 import 'package:mongo_dart/mongo_dart.dart';
+import 'package:hunianku/features/auth/model/user_model.dart';
 
 part 'kost_model.g.dart';
 
@@ -10,7 +11,7 @@ class KostModel {
   @HiveField(1)
   final String idkost;
   @HiveField(2)
-  final String iduser;
+  final UserModel? user;
   @HiveField(3)
   final String namakost;
   @HiveField(4)
@@ -34,7 +35,7 @@ class KostModel {
   KostModel({
     this.id,
     required this.idkost,
-    required this.iduser,
+    this.user,
     required this.namakost,
     required this.jenis,
     required this.alamat,
@@ -51,7 +52,7 @@ class KostModel {
     return KostModel(
       id: map['_id'] != null ? (map['_id'] as ObjectId).oid : null,
       idkost: map['idkost'] ?? '',
-      iduser: map['iduser'] ?? '',
+      user: map['user'] != null ? UserModel.fromMap(map['user']) : null,
       namakost: map['namakost'] ?? '',
       jenis: map['jenis'] ?? '',
       alamat: map['alamat'] ?? '',
@@ -69,7 +70,7 @@ class KostModel {
     return {
       '_id' : id != null ? ObjectId.fromHexString(id!) : ObjectId(),
       'idkost': idkost,
-      'iduser': iduser,
+      'user': user?.toMap(),
       'namakost': namakost,
       'jenis': jenis,
       'alamat': alamat,

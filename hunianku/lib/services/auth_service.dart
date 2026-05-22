@@ -5,6 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:hunianku/features/auth/model/user_model.dart';
 import 'package:hunianku/services/mongo_service.dart';
+//import 'package:hunianku/services/faker_service.dart';
 
 class AuthService {
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
@@ -82,6 +83,7 @@ class AuthService {
       if (user != null) {
         // Jika ketemu, simpan token dan masuk
         await _storage.write(key: 'auth_token', value: (user['_id'] as ObjectId).oid);
+        //await FakerService().seedIfEmpty();
         return {'success': true, 'user': UserModel.fromMap(user)};
       } else {
         return {'success': false, 'message': 'Email atau password salah.'};
