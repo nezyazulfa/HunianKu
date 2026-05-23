@@ -87,7 +87,7 @@ class KostService {
     try {
       final collection = await _mongo.getCollection(_collectionName);
       // Cari data kost yang atribut 'iduser'-nya sama dengan iduser pemilik yang login
-      final data = await collection.find(where.eq('iduser', iduserPemilik)).toList();
+      final data = await collection.find(where.eq('user.iduser', iduserPemilik)).toList();
       
       return data.map((json) => KostModel.fromMap(json)).toList();
     } catch (e) {
