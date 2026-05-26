@@ -21,9 +21,6 @@ class ScanFasilitasController extends ChangeNotifier {
     'toilet': 'Kamar Mandi Dalam',
     'sink': 'Wastafel',
     'couch': 'Sofa',
-    'laptop': 'Laptop',
-    'book': 'Buku',
-    'clock': 'Jam Dinding',
   };
 
   // Fungsi Inisialisasi Utama
