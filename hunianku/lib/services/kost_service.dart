@@ -113,6 +113,7 @@ class KostService {
           .set('kontak', kostUpdate.kontak)
           .set('jenis', kostUpdate.jenis)
           .set('status', kostUpdate.status)
+          .set('daftarFoto', kostUpdate.daftarFoto)
       );
     } catch (e) {
       throw Exception('Gagal mengupdate kost: $e');

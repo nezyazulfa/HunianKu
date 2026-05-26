@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:hunianku/features/dashboard/model/kost_model.dart';
 import 'package:hunianku/features/kost_ku/controllers/kost_ku_controller.dart';
-// --- IMPORT GABUNGAN MILIKMU & TEMANMU ---
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:hunianku/features/tambah_kost/views/map_picker_page.dart';
 import 'package:hunianku/features/tambah_kost/views/scan_fasilitas_page.dart';
@@ -30,23 +31,21 @@ class _EditKostPageState extends State<EditKostPage> {
 
   bool _isPutraSelected = false;
   bool _isPutriSelected = false;
-
   String _selectedPeriode = '/bulan';
   final List<String> _periodeOptions = ['/bulan', '/semester', '/tahun'];
-
   String _selectedStatus = 'Tersedia';
-
   final Color backgroundColor = const Color(0xFFEFEBE1);
   final Color cardColor = const Color(0xFFFBFBF9);
   final Color primaryGreen = const Color(0xFF4A6525);
   final Color primaryRed = const Color(0xFF6B1212);
   final Color inputBackgroundColor = Colors.white;
+  List<String> _gambarLama = [];
+  List<File> _gambarBaru = []; 
+  final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
     super.initState();
-    
-    // --- PARSING DATA DARI DATABASE (Logika Temanmu) ---
     // 1. Parsing Kategori
     String jenis = widget.kostData.jenis;
     _isPutraSelected = jenis.contains('Putra') || jenis == 'Campur';
@@ -72,6 +71,7 @@ class _EditKostPageState extends State<EditKostPage> {
     _kontakController = TextEditingController(text: widget.kostData.kontak);
     
     _selectedStatus = widget.kostData.status.isNotEmpty ? widget.kostData.status : 'Tersedia';
+    _gambarLama = List.from(widget.kostData.daftarFoto);
   }
 
   @override
@@ -86,7 +86,6 @@ class _EditKostPageState extends State<EditKostPage> {
     super.dispose();
   }
 
-  // --- LOGIKA SCAN FASILITAS (Milik Temanmu) ---
   Future<void> _bukaPemindaiFasilitas() async {
     final List<String>? hasilScan = await Navigator.push(
       context,
@@ -105,7 +104,6 @@ class _EditKostPageState extends State<EditKostPage> {
     }
   }
 
-  // --- LOGIKA MENGGABUNGKAN DATA (Milik Temanmu) ---
   KostModel _buatObjekUpdate() {
     List<String> kategoriList = [];
     if (_isPutraSelected) kategoriList.add('Putra');
@@ -127,6 +125,7 @@ class _EditKostPageState extends State<EditKostPage> {
       daftarfasilitas: _fasilitasController.text.trim(),
       deskripsi: _deskripsiController.text.trim(),
       status: _selectedStatus,
+      daftarFoto: List.from(_gambarLama),
     );
   }
 
@@ -152,6 +151,21 @@ class _EditKostPageState extends State<EditKostPage> {
     }
 
     return true; 
+  }
+
+  Future<void> _pickFromGallery() async {
+    try {
+      final List<XFile> pickedFiles = await _picker.pickMultiImage(imageQuality: 80);
+      if (pickedFiles.isNotEmpty) {
+        setState(() {
+          for (var xfile in pickedFiles) {
+            _gambarBaru.add(File(xfile.path));
+          }
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal membuka galeri: $e')));
+    }
   }
 
   @override
@@ -185,7 +199,7 @@ class _EditKostPageState extends State<EditKostPage> {
               const SizedBox(height: 24),
 
               // --- KOTAK UPLOAD GAMBAR ---
-              _buildImageUploadBox(),
+              _buildImageGallery(),
               const SizedBox(height: 24),
 
               _buildTextField(controller: _namaController, hintText: 'Nama Kost'),
@@ -328,7 +342,7 @@ class _EditKostPageState extends State<EditKostPage> {
                           onPressed: () {
                             if (!_validasiInput()) return;
                             final kostUpdate = _buatObjekUpdate();
-                            _controller.simpanEditKost(context, kostUpdate, widget.isDraft);
+                            _controller.simpanEditKost(context, kostUpdate, _gambarBaru, widget.isDraft);
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: primaryGreen,
@@ -350,29 +364,100 @@ class _EditKostPageState extends State<EditKostPage> {
     );
   }
 
-  Widget _buildImageUploadBox() {
-    return InkWell(
-      onTap: () {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Fitur upload foto segera hadir!')));
-      },
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        height: 160, width: double.infinity,
-        decoration: BoxDecoration(
-          color: Colors.grey[200],
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.shade400, width: 1.5),
+  Widget _buildImageGallery() {
+    int totalImages = _gambarLama.length + _gambarBaru.length;
+
+    // Jika belum ada gambar sama sekali
+    if (totalImages == 0) {
+      return InkWell(
+        onTap: _pickFromGallery,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          height: 160, width: double.infinity,
+          decoration: BoxDecoration(
+            color: Colors.grey[200], borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey.shade400, width: 1.5),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.add_photo_alternate_outlined, size: 48, color: Colors.grey[600]),
+              const SizedBox(height: 8),
+              Text('Tambah Foto Kost', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.grey[600])),
+            ],
+          ),
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.add_photo_alternate_outlined, size: 48, color: Colors.grey[600]),
-            const SizedBox(height: 8),
-            Text('Upload Foto Kost', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.grey[600])),
-            const SizedBox(height: 4),
-            Text('Format: JPG, PNG', style: TextStyle(fontSize: 11, color: Colors.grey[500])),
-          ],
-        ),
+      );
+    }
+
+    // Jika sudah ada gambar, tampilkan deretan gambarnya
+    return SizedBox(
+      height: 120,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: totalImages + 1, // +1 untuk tombol tambah foto di ujung kanan
+        itemBuilder: (context, index) {
+          
+          // 1. Tombol Tambah di paling kanan
+          if (index == totalImages) {
+            return GestureDetector(
+              onTap: _pickFromGallery,
+              child: Container(
+                width: 100, margin: const EdgeInsets.only(left: 8),
+                decoration: BoxDecoration(
+                  color: Colors.grey[200], borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade400, width: 1.5, style: BorderStyle.solid),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.add, size: 32, color: Colors.grey[600]),
+                    const SizedBox(height: 4),
+                    Text('Tambah', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                  ],
+                ),
+              ),
+            );
+          }
+
+          // 2. Menentukan apakah ini gambar lama (URL Cloudinary) atau gambar baru (File dari HP)
+          bool isGambarLama = index < _gambarLama.length;
+          
+          return Stack(
+            children: [
+              Container(
+                width: 120, margin: const EdgeInsets.only(right: 12),
+                clipBehavior: Clip.hardEdge,
+                decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), color: Colors.grey[300]),
+                // Tampilkan pakai Network jika gambar lama, pakai File jika gambar baru
+                child: isGambarLama
+                    ? Image.network(_gambarLama[index], fit: BoxFit.cover)
+                    : Image.file(_gambarBaru[index - _gambarLama.length], fit: BoxFit.cover),
+              ),
+              
+              // 3. Tombol Silang (Hapus) di pojok kanan atas gambar
+              Positioned(
+                top: 4, right: 16,
+                child: GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      if (isGambarLama) {
+                        _gambarLama.removeAt(index); // Hapus dari daftar URL lama
+                      } else {
+                        _gambarBaru.removeAt(index - _gambarLama.length); // Hapus dari daftar File baru
+                      }
+                    });
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                    child: const Icon(Icons.close, size: 14, color: Colors.white),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

@@ -1,11 +1,13 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:hunianku/features/dashboard/model/kost_model.dart';
 import 'package:hunianku/services/kost_service.dart';
 import 'package:hunianku/services/session_service.dart';
+import 'package:hunianku/services/storage_service.dart';
 
 class KostKuController {
   final KostService _kostService = KostService();
-
+  final StorageService _storageService = StorageService();
   final ValueNotifier<bool> isLoading = ValueNotifier<bool>(false);
   final ValueNotifier<List<KostModel>> kostKuList = ValueNotifier<List<KostModel>>([]);
 
@@ -28,9 +30,14 @@ class KostKuController {
   }
 
   // 2. Menyimpan Edit Kost
-  Future<void> simpanEditKost(BuildContext context, KostModel kostUpdate, bool isDraft) async {
+  Future<void> simpanEditKost(BuildContext context, KostModel kostUpdate, List<File> fileFotoBaru, bool isDraft) async {
     isLoading.value = true;
     try {
+      if (fileFotoBaru.isNotEmpty) {
+        List<String> linkFotoBaru = await _storageService.uploadBanyakFoto(fileFotoBaru);
+        kostUpdate.daftarFoto.addAll(linkFotoBaru); 
+      }
+
       if (isDraft) {
         // Jika asalnya dari Draf, simpan ke Hive
         await _kostService.updateDraftLokal(kostUpdate);
