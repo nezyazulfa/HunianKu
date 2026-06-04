@@ -4,7 +4,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:hunianku/features/dashboard/model/kost_model.dart';
 import 'package:hunianku/features/tambah_kost/controllers/tambah_kost_controller.dart';
 import 'package:hunianku/services/session_service.dart';
-// --- IMPORT GABUNGAN MILIKMU & TEMANMU ---
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:hunianku/features/tambah_kost/views/map_picker_page.dart';
 import 'package:hunianku/helpers/pcd_helper.dart'; 
@@ -649,9 +648,7 @@ class _AddKostPageState extends State<AddKostPage> {
   }
 }
 
-// =============================================================================
-// --- WIDGET PCD EDITOR (Milik Temanmu) ---
-// =============================================================================
+// --- WIDGET PCD EDITOR
 class _LargePcdEditor extends StatefulWidget {
   final Uint8List originalBytes;
   final Color primaryGreen;
@@ -678,6 +675,46 @@ class _LargePcdEditorState extends State<_LargePcdEditor> {
   double _medianRadius = 1.0;
   bool _isProcessing = false;
   bool _showOriginalOnly = false;
+
+  // Menyimpan hasil filter sementara untuk ditampilkan di layar
+  late Uint8List _previewBytes;
+
+  @override
+  void initState() {
+    super.initState();
+    _previewBytes = widget.originalBytes;
+  }
+
+  Future<void> _generatePreview() async {
+    setState(() => _isProcessing = true);
+    try {
+      Uint8List resultBytes = widget.originalBytes;
+
+      if (_selectedTab == 'Sharpen') {
+        resultBytes = await compute(applySharpening, {
+          'bytes': widget.originalBytes,
+          'sharpen': _sharpenLevel,
+        });
+      } else if (_selectedTab == 'Denoise') {
+        resultBytes = await compute(applyMedianFilter, {
+          'bytes': widget.originalBytes,
+          'radius': _medianRadius.toInt(),
+        });
+      } else if (_selectedTab == 'AutoFix') {
+        resultBytes = await compute(applyAutoFix, {
+          'bytes': widget.originalBytes,
+        });
+      }
+
+      setState(() {
+        _previewBytes = resultBytes;
+      });
+    } catch (e) {
+      debugPrint('Gagal generate preview: $e');
+    } finally {
+      setState(() => _isProcessing = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -720,7 +757,7 @@ class _LargePcdEditorState extends State<_LargePcdEditor> {
                       clipBehavior: Clip.hardEdge,
                       child: _isProcessing
                         ? Center(child: CircularProgressIndicator(color: widget.primaryGreen))
-                        : _buildLargeImageRender(),
+                        : _buildLargeImageRender(), // Panggil render UI
                     ),
                     
                     if (_showOriginalOnly)
@@ -796,6 +833,7 @@ class _LargePcdEditorState extends State<_LargePcdEditor> {
     }
     
     if (_selectedTab == 'Brightness') {
+      // Tetap gunakan ColorFiltered agar super mulus saat slider digeser
       return ColorFiltered(
         colorFilter: ColorFilter.matrix([
           1, 0, 0, 0, _brightnessLevel, 
@@ -807,7 +845,7 @@ class _LargePcdEditorState extends State<_LargePcdEditor> {
       );
     }
     
-    return Image.memory(widget.originalBytes, fit: BoxFit.contain);
+    return Image.memory(_previewBytes, fit: BoxFit.contain);
   }
 
   Widget _buildControlSlider() {
@@ -833,10 +871,11 @@ class _LargePcdEditorState extends State<_LargePcdEditor> {
           Text('Kekuatan Edge: ${_sharpenLevel.toStringAsFixed(1)}', style: const TextStyle(fontSize: 12, color: Colors.black54)),
           Slider(
             value: _sharpenLevel,
-            min: 1.0, max: 5.0,
+            min: 0.0, max: 5.0,
             divisions: 4, 
             activeColor: widget.primaryGreen,
             onChanged: (val) => setState(() => _sharpenLevel = val),
+            onChangeEnd: (val) => _generatePreview(), 
           ),
         ],
       );
@@ -848,10 +887,11 @@ class _LargePcdEditorState extends State<_LargePcdEditor> {
           Text('Tingkat Kehalusan: ${_medianRadius.toInt()}', style: const TextStyle(fontSize: 12, color: Colors.black54)),
           Slider(
             value: _medianRadius,
-            min: 1.0, max: 3.0,
+            min: 0.0, max: 3.0,
             divisions: 2, 
             activeColor: widget.primaryGreen,
             onChanged: (val) => setState(() => _medianRadius = val),
+            onChangeEnd: (val) => _generatePreview(), 
           ),
         ],
       );
@@ -872,7 +912,12 @@ class _LargePcdEditorState extends State<_LargePcdEditor> {
       backgroundColor: Colors.white,
       labelStyle: TextStyle(color: isSelected ? widget.primaryGreen : Colors.black87, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal),
       onSelected: (val) {
-        if (val) setState(() => _selectedTab = title);
+        if (val) {
+          setState(() => _selectedTab = title);
+          if (title != 'Brightness') {
+             _generatePreview();
+          }
+        }
       },
     );
   }
@@ -882,26 +927,13 @@ class _LargePcdEditorState extends State<_LargePcdEditor> {
     
     try {
       Uint8List finalBytes;
-
       if (_selectedTab == 'Brightness') {
         finalBytes = await compute(applyBrightness, {
           'bytes': widget.originalBytes,
           'brightness': _brightnessLevel,
         });
-      } else if (_selectedTab == 'Sharpen') {
-        finalBytes = await compute(applySharpening, {
-          'bytes': widget.originalBytes,
-          'sharpen': _sharpenLevel,
-        });
-      } else if (_selectedTab == 'Denoise') {
-        finalBytes = await compute(applyMedianFilter, {
-          'bytes': widget.originalBytes,
-          'radius': _medianRadius.toInt(),
-        });
       } else {
-        finalBytes = await compute(applyAutoFix, {
-          'bytes': widget.originalBytes,
-        });
+        finalBytes = _previewBytes;
       }
 
       widget.onApply(finalBytes);
