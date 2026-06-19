@@ -228,6 +228,7 @@ class _TambahNotePageState extends State<TambahNotePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       backgroundColor: const Color(0xFFEFEBE1),
       // --- TOMBOL KAMERA MELAYANG ---
       floatingActionButton: Padding(
@@ -285,84 +286,63 @@ class _TambahNotePageState extends State<TambahNotePage> {
                           ),
                         ],
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          GestureDetector(
-                            onTap: _showKostDropdown,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
-                              ),
-                              decoration: BoxDecoration(
-                                border: Border.all(color: Colors.grey.shade300),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    _selectedKost?.namakost ??
-                                        'Pilih Nama Kost',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: _selectedKost != null
-                                          ? FontWeight.w800
-                                          : FontWeight.normal,
-                                      color: _selectedKost != null
-                                          ? Colors.black87
-                                          : Colors.grey,
+                      child: SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            GestureDetector(
+                              onTap: _showKostDropdown, 
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                decoration: BoxDecoration(border: Border.all(color: Colors.grey.shade300), borderRadius: BorderRadius.circular(12)),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      _selectedKost?.namakost ?? 'Pilih Nama Kost',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: _selectedKost != null ? FontWeight.w800 : FontWeight.normal,
+                                        color: _selectedKost != null ? Colors.black87 : Colors.grey,
+                                      ),
                                     ),
-                                  ),
-                                  const Icon(
-                                    Icons.arrow_drop_down,
-                                    color: Colors.black87,
-                                  ),
-                                ],
+                                    const Icon(Icons.arrow_drop_down, color: Colors.black87),
+                                  ],
+                                ),
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 5),
+                            const SizedBox(height: 16),
+                            
+                            _buildImageSection(),
+                            const SizedBox(height: 16),
 
-                          // --- KOTAK GAMBAR / UPLOAD ---
-                          _buildImageSection(),
-                          const SizedBox(height: 5),
-
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text(
-                                'Scan Fasilitas Kost',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                  color: Colors.black87,
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  'Scan Fasilitas Kost',
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black87),
                                 ),
-                              ),
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: primaryGreen.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: IconButton(
-                                  icon: const Icon(
-                                    Icons.document_scanner_rounded,
-                                    size: 20,
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: primaryGreen.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
-                                  color: primaryGreen,
-                                  onPressed: _bukaPemindaiFasilitas,
-                                  tooltip: 'Scan Fasilitas Kost',
+                                  child: IconButton(
+                                    icon: const Icon(Icons.document_scanner_rounded, size: 20),
+                                    color: primaryGreen,
+                                    onPressed: _bukaPemindaiFasilitas,
+                                    tooltip: 'Scan Fasilitas Kost',
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
+                              ],
+                            ),
+                            const SizedBox(height: 5),
 
-                          Expanded(
-                            child: TextField(
+                            TextField(
                               controller: _noteController,
                               maxLines: null,
+                              minLines: 3,
                               keyboardType: TextInputType.multiline,
                               decoration: const InputDecoration(
                                 hintText: 'Tulis catatanmu di sini...',
@@ -374,15 +354,18 @@ class _TambahNotePageState extends State<TambahNotePage> {
                                 color: Colors.black87,
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
 
                   // --- TOMBOL SIMPAN ---
                   Padding(
-                    padding: const EdgeInsets.only(bottom: 100.0, top: 8.0),
+                    padding: EdgeInsets.only(
+                      bottom: MediaQuery.of(context).viewInsets.bottom > 0 ? 24.0 : 100.0, 
+                      top: 8.0
+                    ), 
                     child: ValueListenableBuilder<bool>(
                       valueListenable: _controller.isLoading,
                       builder: (context, isLoading, child) {
@@ -403,9 +386,18 @@ class _TambahNotePageState extends State<TambahNotePage> {
                                     return;
                                   }
 
-                                  final now = DateTime.now();
-                                  final tanggalFormat =
-                                      "${now.day.toString().padLeft(2, '0')}-${now.month.toString().padLeft(2, '0')}-${now.year} ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}";
+                            final now = DateTime.now();
+                            final tanggalFormat = "${now.day.toString().padLeft(2, '0')}-${now.month.toString().padLeft(2, '0')}-${now.year} ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}";
+                            
+                            final noteBaru = NoteModel(
+                              idnote: 'NOTE-${now.millisecondsSinceEpoch}',
+                              user: _currentUser,
+                              kost: _selectedKost,
+                              catatan: _noteController.text.trim(),
+                              tanggal: tanggalFormat,
+                            );
+                            
+                            bool success = await _controller.tambahNote(noteBaru);
 
                                   final noteBaru = NoteModel(
                                     idnote:

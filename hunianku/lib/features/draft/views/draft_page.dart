@@ -173,10 +173,12 @@ class _DraftPageState extends State<DraftPage> {
                   style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.black87),
                 ),
                 const SizedBox(height: 8),
-                
-                // Baris Tombol Aksi
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+
+                Wrap(
+                  alignment: WrapAlignment.end,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 8,
+                  runSpacing: 8,
                   children: [
                     // TOMBOL EDIT
                     IconButton(
@@ -187,7 +189,6 @@ class _DraftPageState extends State<DraftPage> {
                             builder: (context) => EditKostPage(initialData: dataForEdit ?? {}, kostData: kost, isDraft: true,),
                           ),
                         ).then((_) {
-                          // Refresh data saat kembali dari halaman edit (jaga-jaga jika di-save)
                           _controller.fetchDrafts();
                         });
                       },
@@ -195,7 +196,6 @@ class _DraftPageState extends State<DraftPage> {
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
                     ),
-                    const SizedBox(width: 12),
                     
                     // TOMBOL DELETE
                     IconButton(
@@ -206,7 +206,6 @@ class _DraftPageState extends State<DraftPage> {
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
                     ),
-                    const SizedBox(width: 12),
 
                     // TOMBOL POSTING
                     ElevatedButton(
