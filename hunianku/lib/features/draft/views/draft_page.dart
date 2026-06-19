@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../kost_ku/views/edit_kost_page.dart'; 
 import 'package:hunianku/features/dashboard/model/kost_model.dart';
 import 'package:hunianku/features/draft/controllers/draft_controller.dart'; 
+import 'dart:io';
 
 class DraftPage extends StatefulWidget {
   const DraftPage({super.key});
@@ -124,7 +125,9 @@ class _DraftPageState extends State<DraftPage> {
               borderRadius: BorderRadius.circular(16),
               image: kost.daftarFoto.isNotEmpty
                   ? DecorationImage(
-                      image: NetworkImage(kost.daftarFoto[0]), // Ambil foto urutan pertama
+                      image: kost.daftarFoto[0].startsWith('http')
+                          ? NetworkImage(kost.daftarFoto[0]) as ImageProvider
+                          : FileImage(File(kost.daftarFoto[0])),
                       fit: BoxFit.cover, // Biar fotonya memenuhi kotak tanpa gepeng
                     )
                   : null,

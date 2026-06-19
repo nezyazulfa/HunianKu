@@ -244,11 +244,11 @@ class _TambahNotePageState extends State<TambahNotePage> {
                               ),
                             ),
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 5),
                           
                           // --- KOTAK GAMBAR / UPLOAD ---
                           _buildImageSection(),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 5),
 
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -271,7 +271,7 @@ class _TambahNotePageState extends State<TambahNotePage> {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 5),
+                          
 
                           Expanded(
                             child: TextField(

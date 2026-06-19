@@ -162,6 +162,7 @@ class _AddKostPageState extends State<AddKostPage> {
     if (_isPutriSelected) kategoriList.add('Putri');
     String kategoriFinal = kategoriList.join(', ');
     String hargaFinal = 'Rp${_hargaController.text.trim()}$_selectedPeriode';
+    List<String> pathFotoLokal = _imageFiles.map((file) => file.path).toList();
 
     return KostModel(
       idkost: 'K-${DateTime.now().millisecondsSinceEpoch}', 
@@ -175,6 +176,7 @@ class _AddKostPageState extends State<AddKostPage> {
       daftarfasilitas: _fasilitasController.text.trim(),
       deskripsi: _deskripsiController.text.trim(),
       status: _selectedStatus,
+      daftarFoto: pathFotoLokal,
     );
   }
 
