@@ -399,19 +399,6 @@ class _TambahNotePageState extends State<TambahNotePage> {
                             
                             bool success = await _controller.tambahNote(noteBaru);
 
-                                  final noteBaru = NoteModel(
-                                    idnote:
-                                        'NOTE-${now.millisecondsSinceEpoch}',
-                                    user: _currentUser,
-                                    kost: _selectedKost,
-                                    catatan: _noteController.text.trim(),
-                                    tanggal: tanggalFormat,
-                                  );
-
-                                  bool success = await _controller.tambahNote(
-                                    noteBaru,
-                                  );
-
                                   if (success && context.mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
