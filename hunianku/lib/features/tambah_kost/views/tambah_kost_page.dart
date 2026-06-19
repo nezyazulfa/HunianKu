@@ -60,7 +60,7 @@ class _AddKostPageState extends State<AddKostPage> {
 
   Future<void> _pickFromCamera() async {
     try {
-      final XFile? pickedFile = await _picker.pickImage(source: ImageSource.camera, imageQuality: 80);
+      final XFile? pickedFile = await _picker.pickImage(source: ImageSource.camera, imageQuality: 85, maxWidth: 1080, maxHeight: 1080,);
       if (pickedFile != null) {
         setState(() {
           _imageFiles.add(File(pickedFile.path));
@@ -73,7 +73,7 @@ class _AddKostPageState extends State<AddKostPage> {
 
   Future<void> _pickFromGallery() async {
     try {
-      final List<XFile> pickedFiles = await _picker.pickMultiImage(imageQuality: 80);
+      final List<XFile> pickedFiles = await _picker.pickMultiImage(imageQuality: 85, maxWidth: 1080, maxHeight: 1080,);
       if (pickedFiles.isNotEmpty) {
         setState(() {
           for (var xfile in pickedFiles) {

@@ -48,7 +48,6 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   Widget build(BuildContext context) {
-    // --- GABUNGAN MENU NAVBAR KAMU & TEMANMU ---
     final List<Widget> pages = [
       _buildMainDashboard(), // Index 0 (Home)
 
