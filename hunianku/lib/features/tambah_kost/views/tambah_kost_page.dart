@@ -60,7 +60,7 @@ class _AddKostPageState extends State<AddKostPage> {
 
   Future<void> _pickFromCamera() async {
     try {
-      final XFile? pickedFile = await _picker.pickImage(source: ImageSource.camera, imageQuality: 80);
+      final XFile? pickedFile = await _picker.pickImage(source: ImageSource.camera, imageQuality: 85, maxWidth: 1080, maxHeight: 1080,);
       if (pickedFile != null) {
         setState(() {
           _imageFiles.add(File(pickedFile.path));
@@ -73,7 +73,7 @@ class _AddKostPageState extends State<AddKostPage> {
 
   Future<void> _pickFromGallery() async {
     try {
-      final List<XFile> pickedFiles = await _picker.pickMultiImage(imageQuality: 80);
+      final List<XFile> pickedFiles = await _picker.pickMultiImage(imageQuality: 85, maxWidth: 1080, maxHeight: 1080,);
       if (pickedFiles.isNotEmpty) {
         setState(() {
           for (var xfile in pickedFiles) {
@@ -162,7 +162,6 @@ class _AddKostPageState extends State<AddKostPage> {
     if (_isPutriSelected) kategoriList.add('Putri');
     String kategoriFinal = kategoriList.join(', ');
     String hargaFinal = 'Rp${_hargaController.text.trim()}$_selectedPeriode';
-    List<String> pathFotoLokal = _imageFiles.map((file) => file.path).toList();
 
     return KostModel(
       idkost: 'K-${DateTime.now().millisecondsSinceEpoch}', 
@@ -176,7 +175,6 @@ class _AddKostPageState extends State<AddKostPage> {
       daftarfasilitas: _fasilitasController.text.trim(),
       deskripsi: _deskripsiController.text.trim(),
       status: _selectedStatus,
-      daftarFoto: pathFotoLokal,
     );
   }
 
