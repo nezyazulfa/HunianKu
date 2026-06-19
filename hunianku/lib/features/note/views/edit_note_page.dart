@@ -99,7 +99,7 @@ class _EditNotePageState extends State<EditNotePage> {
                 ),
                 child: Column(
                   children: [
-                    // --- KARTU INPUT CATATAN (Sesuai desain gambar) ---
+                    // --- KARTU INPUT CATATAN ---
                     Expanded(
                       child: Container(
                         margin: const EdgeInsets.only(top: 32, left: 24, right: 24, bottom: 24),
@@ -115,46 +115,45 @@ class _EditNotePageState extends State<EditNotePage> {
                             ),
                           ],
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Nama Kost (Statis & Tidak dapat diubah sesuai permintaan)
-                            Text(
-                              widget.noteData.kost?.namakost ?? 'Kost Bahagia',
-                              style: const TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.w900,
-                                color: Colors.black87,
+                        child: SingleChildScrollView(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                widget.noteData.kost?.namakost ?? 'Kost Bahagia',
+                                style: const TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w900,
+                                  color: Colors.black87,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 16),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text(
-                                  'Scan Fasilitas Kost',
-                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black87),
-                                ),
-                                Container(
-                                  decoration: BoxDecoration(
-                                    color: primaryGreen.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(12),
+                              const SizedBox(height: 16),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    'Scan Fasilitas Kost',
+                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black87),
                                   ),
-                                  child: IconButton(
-                                    icon: const Icon(Icons.document_scanner_rounded, size: 20),
-                                    color: primaryGreen,
-                                    onPressed: _bukaPemindaiFasilitas,
-                                    tooltip: 'Scan Tambahan Fasilitas',
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      color: primaryGreen.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: IconButton(
+                                      icon: const Icon(Icons.document_scanner_rounded, size: 20),
+                                      color: primaryGreen,
+                                      onPressed: _bukaPemindaiFasilitas,
+                                      tooltip: 'Scan Tambahan Fasilitas',
+                                    ),
                                   ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            // Field Edit Isi Catatan
-                            Expanded(
-                              child: TextField(
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              TextField(
                                 controller: _noteController,
                                 maxLines: null,
+                                minLines: 5,
                                 keyboardType: TextInputType.multiline,
                                 decoration: const InputDecoration(
                                   hintText: 'Edit catatanmu di sini...',
@@ -166,33 +165,35 @@ class _EditNotePageState extends State<EditNotePage> {
                                   color: Colors.black87,
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),
 
                     // --- TOMBOL SIMPAN ---
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 40.0, top: 8.0), 
+                      padding: EdgeInsets.only(
+                        bottom: MediaQuery.of(context).viewInsets.bottom > 0 ? 16.0 : 40.0, 
+                        top: 8.0
+                      ),
                       child: ValueListenableBuilder<bool>(
                         valueListenable: widget.controller.isLoading,
                         builder: (context, isLoading, child) {
                           return ElevatedButton(
                           onPressed: isLoading ? null: () async {
                             final updatedNote = NoteModel(
-                                id: widget.noteData.id, // Pertahankan ID asli
+                                id: widget.noteData.id,
                                 idnote: widget.noteData.idnote,
                                 user: widget.noteData.user,
                                 kost: widget.noteData.kost,
-                                tanggal: widget.noteData.tanggal, // Tetap gunakan tanggal lama atau ubah jadi waktu sekarang
-                                catatan: _noteController.text.trim(), // Isi teks terbaru
+                                tanggal: widget.noteData.tanggal,
+                                catatan: _noteController.text.trim(),
                               );
-                              // 2. Lempar ke controller
                               bool success = await widget.controller.simpanEditNote(updatedNote);
                               if (success && context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Catatan berhasil diperbarui!')));
-                                Navigator.pop(context); // Kembali ke halaman list note
+                                Navigator.pop(context);
                               }
                           },
                         style: ElevatedButton.styleFrom(
